@@ -1,0 +1,34 @@
+# Defaults
+node_modules
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+*.local
+
+# Editor directories
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build outputs
+dist
+build
+out
+.next
+
+# SSL / Certificates
+*.pem
+*.key
+*.crt
+nginx/ssl/
+
+# Docker / Certbot volumes (if mapped locally)
+certbot-conf/
+certbot-www/
+shinyq-data/
