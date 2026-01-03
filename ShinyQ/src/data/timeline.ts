@@ -9,11 +9,11 @@ export interface TimelineItem {
   tools?: string[];
   logo?: string;
   type:
-    | "Full-Time"
-    | "Part-Time"
-    | "Education"
-    | "Certification"
-    | "Competition";
+  | "Full-Time"
+  | "Part-Time"
+  | "Education"
+  | "Certification"
+  | "Competition";
 }
 
 export interface TimelineProps {
@@ -356,6 +356,6 @@ export const timelineItems: TimelineItem[] = [
       "Engaged in hands-on projects and synchronous training sessions with industry and academic experts",
       "Participated in blended learning: self-paced modules, online discussions, and real-time video conferences"
     ],
-    tools:["Python", "Jupyter Notebook", "NumPy", "Pandas", "scikit-learn", "Matplotlib", "Seaborn", "Yolo v3"]
+    tools: ["Python", "Jupyter Notebook", "NumPy", "Pandas", "scikit-learn", "Matplotlib", "Seaborn", "Yolo v3"]
   },
 ];
