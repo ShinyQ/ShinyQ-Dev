@@ -2,11 +2,7 @@ import { Octokit } from "@octokit/core";
 import { KV } from "../kv";
 import { config } from "@/config";
 
-if (!config.GITHUB.API_TOKEN) {
-    throw new Error("GitHub API token is required");
-}
-
-const octokit = new Octokit({ auth: config.GITHUB.API_TOKEN as string });
+const octokit = new Octokit({ auth: config.GITHUB.API_TOKEN });
 
 const CACHE_KEY = config.GITHUB.CACHE.KEY_TOP_REPO;
 const CACHE_TTL = config.GITHUB.CACHE.TOP_REPO_TTL;
