@@ -35,8 +35,12 @@ ENV NODE_ENV=production \
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs
 
+# Create .next/cache directory and set permissions
+# This ensures Next.js can write image cache even when running as non-root
+RUN mkdir -p .next/cache && chown -R nextjs:nodejs .next
+
 # Copy files with permission
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
