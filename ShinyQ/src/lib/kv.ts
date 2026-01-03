@@ -9,7 +9,10 @@ interface CacheEntry<T> {
 export class KV {
     private readonly memoryCache = new Map<string, CacheEntry<any>>();
 
-    private getBaseURL(namespaceId: string): string {
+    private getBaseURL(namespaceId: string): string | null {
+        if (!config.CLOUDFLARE.KV.ACCOUNT_ID || !namespaceId) {
+            return null;
+        }
         return `https://api.cloudflare.com/client/v4/accounts/${config.CLOUDFLARE.KV.ACCOUNT_ID}/storage/kv/namespaces/${namespaceId}/values`;
     }
 
@@ -38,7 +41,13 @@ export class KV {
         this.memoryCache.delete(cacheKey);
 
         try {
-            const res = await fetch(`${this.getBaseURL(namespaceId)}/${encodeURIComponent(key)}`, {
+            const baseUrl = this.getBaseURL(namespaceId);
+            if (!baseUrl) {
+                console.warn('[KV] Missing Cloudflare configuration, skipping fetch');
+                return null;
+            }
+
+            const res = await fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${config.CLOUDFLARE.KV.API_TOKEN}`
@@ -72,8 +81,14 @@ export class KV {
         this.setMemoryCache(namespaceId, key, value, ttl);
 
         try {
-            const url = new URL(`${this.getBaseURL(namespaceId)}/${encodeURIComponent(key)}`);
-            
+            const baseUrl = this.getBaseURL(namespaceId);
+            if (!baseUrl) {
+                console.warn('[KV] Missing Cloudflare configuration, skipping put');
+                return;
+            }
+
+            const url = new URL(`${baseUrl}/${encodeURIComponent(key)}`);
+
             if (ttl) {
                 url.searchParams.set('expiration_ttl', ttl.toString());
             }
