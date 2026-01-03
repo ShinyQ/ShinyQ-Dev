@@ -49,17 +49,16 @@ class R2ClientManager {
     /**
      * Initializes the R2 configuration based on the runtime environment.
      */
-    private initializeConfig(): void {
+    private initializeConfig(): boolean {
         if (typeof window !== "undefined") {
-            console.error("R2 client is not available in the browser");
-            return;
+            return false;
         }
 
         const { CLOUDFLARE } = config;
 
         if (!CLOUDFLARE.R2.ACCESS_KEY_ID || !CLOUDFLARE.R2.SECRET_ACCESS_KEY) {
-            console.error("Missing Cloudflare R2 credentials");
-            return;
+            // Quietly fail if credentials are missing (expected during build)
+            return false;
         }
 
         this.config = {
@@ -69,8 +68,9 @@ class R2ClientManager {
                 accessKeyId: CLOUDFLARE.R2.ACCESS_KEY_ID,
                 secretAccessKey: CLOUDFLARE.R2.SECRET_ACCESS_KEY,
             },
-            forcePathStyle: false, 
+            forcePathStyle: false, // Must be false for R2 to work with custom domains or subdomains correctly
         };
+        return true;
     }
 
     /**
@@ -79,12 +79,14 @@ class R2ClientManager {
      */
     public getClient(): S3Client | null {
         if (!this.config) {
-            console.error("R2 client configuration is not initialized");
-            return null;
+            // Attempt re-init or just fail gracefully
+            if (!this.initializeConfig()) {
+                return null;
+            }
         }
 
         try {
-            this.client ??= new S3Client(this.config);
+            this.client ??= new S3Client(this.config!);
             return this.client;
         } catch (error) {
             console.error("Failed to initialize R2 client:", error);
@@ -100,7 +102,7 @@ class R2ClientManager {
     public async withClient<T>(operation: (client: S3Client) => Promise<T>): Promise<T | null> {
         const client = this.getClient();
         if (!client) {
-            console.error("Failed to get R2 client");
+            // Silent return if client is not available
             return null;
         }
 
@@ -224,7 +226,6 @@ export async function listDirectoryFiles(prefix: string): Promise<R2File[]> {
     });
 
     if (!files) {
-        console.error("Failed to list directory files");
         return [];
     }
 
