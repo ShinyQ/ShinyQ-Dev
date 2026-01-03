@@ -1,0 +1,67 @@
+@layer components {
+    .blog-content {
+        @apply px-2 sm:px-4 lg:px-6;
+    }
+
+    .blog-content p {
+        @apply text-base leading-relaxed mb-6 text-foreground/90;
+    }
+
+    .blog-content h1 {
+        @apply text-4xl sm:text-5xl font-bold mb-8 mt-12;
+    }
+
+    .blog-content h2 {
+        @apply text-3xl font-semibold mb-6 mt-10;
+    }
+
+    .blog-content h3 {
+        @apply text-2xl font-semibold mb-4 mt-8;
+    }
+
+    .blog-content ul,
+    .blog-content ol {
+        @apply mb-6 pl-6;
+    }
+
+    .blog-content li {
+        @apply mb-2;
+    }
+
+    .blog-content a {
+        @apply text-primary hover:text-primary/80 underline underline-offset-2;
+    }
+
+    .blog-content blockquote {
+        @apply border-l-4 border-primary pl-6 py-4 my-8 bg-card/50 rounded-r-lg;
+    }
+
+    .blog-content blockquote p {
+        @apply mb-0 text-sm italic text-foreground/80;
+    }
+
+    .blog-content blockquote p:last-child {
+        @apply font-semibold not-italic text-foreground/90 mt-2;
+    }
+
+    .blog-content pre {
+        @apply my-6 p-4 rounded-lg bg-card overflow-x-auto;
+    }
+
+    .blog-content code {
+        @apply px-1.5 py-0.5 rounded text-sm;
+    }
+
+    .blog-content img {
+        @apply my-8 rounded-lg shadow-lg w-full max-w-4xl mx-auto object-contain;
+    }
+
+    .blog-cover-image {
+        @apply w-full max-w-4xl mx-auto object-contain rounded-lg shadow-xl mb-8;
+    }
+
+    /* Blog preview thumbnail styles */
+    .blog-thumbnail {
+        @apply w-full h-48 object-cover transition-transform duration-300 hover:scale-105;
+    }
+}

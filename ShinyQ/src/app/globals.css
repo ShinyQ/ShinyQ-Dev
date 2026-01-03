@@ -1,0 +1,266 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 22 15% 10%;
+    --foreground: 30 20% 90%;
+    --card: 22 15% 12%;
+    --card-foreground: 30 20% 90%;
+    --popover: 22 15% 12%;
+    --popover-foreground: 30 20% 90%;
+    --primary: 32 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 20 10% 20%;
+    --secondary-foreground: 30 20% 90%;
+    --muted: 22 10% 25%;
+    --muted-foreground: 35 10% 60%;
+    --accent: 38 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 10% 25%;
+    --input: 20 10% 20%;
+    --ring: 32 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  :host,
+  html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .light {
+    --background: 38 50% 97%;
+    --foreground: 20 25% 10%;
+    --card: 37 70% 95%;
+    --card-foreground: 20 25% 10%;
+    --popover: 38 60% 98%;
+    --popover-foreground: 20 20% 15%;
+    --primary: 32 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 30% 88%;
+    --secondary-foreground: 20 20% 20%;
+    --muted: 36 20% 85%;
+    --muted-foreground: 22 10% 35%;
+    --accent: 38 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 25% 85%;
+    --input: 36 25% 95%;
+    --ring: 32 100% 50%;
+
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-mono;
+  }
+
+  button,
+  [role="button"],
+  a {
+    @apply cursor-pointer;
+  }
+}
+
+/* Logo styles from App.css */
+.logo {
+  @apply h-24 p-6;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+/* Animations */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Marquee animations */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee {
+  animation: marquee 15s linear infinite;
+  will-change: transform;
+}
+
+.marquee-slow {
+  animation: marquee 20s linear infinite;
+  will-change: transform;
+}
+
+.marquee-fast {
+  animation: marquee 18s linear infinite;
+  will-change: transform;
+}
+
+.tech-slider:hover .marquee,
+.tech-slider:hover .marquee-slow,
+.tech-slider:hover .marquee-fast {
+  animation-play-state: paused;
+}
+
+/* Component classes */
+.tech-card {
+  @apply px-4 py-2 bg-card rounded-md shadow-lg border border-border flex items-center gap-2 hover:border-primary transition-colors duration-200;
+}
+
+.nav-link {
+  @apply relative px-3 py-2 text-foreground/80 hover:text-foreground transition-colors duration-200 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary after:origin-left after:scale-x-0 after:transition-transform after:duration-300 hover:after:scale-x-100;
+}
+
+.nav-link.active {
+  @apply text-foreground after:scale-x-100;
+}
+
+.project-card {
+  @apply bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all duration-300 hover:shadow-lg hover:shadow-primary/10;
+}
+
+/* Timeline classes */
+.timeline-line {
+  @apply absolute left-2 top-0 w-[1px] h-full bg-border z-0;
+}
+
+@keyframes blink {
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.blink-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+/* Theme selector */
+:root {
+  color-scheme: light dark;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+:root:not(.dark) {
+  color-scheme: light;
+}
+
+.theme-selector {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.theme-loaded .theme-selector {
+  opacity: 1;
+}
+
+/* Blog Content Styles */
+@layer components {
+  .blog-content {
+    @apply px-2 sm:px-4 lg:px-6;
+  }
+
+  .blog-content p {
+    @apply text-base leading-relaxed mb-6 text-foreground/90;
+  }
+
+  .blog-content h1 {
+    @apply text-4xl sm:text-5xl font-bold mb-8 mt-12;
+  }
+
+  .blog-content h2 {
+    @apply text-3xl font-semibold mb-6 mt-10;
+  }
+
+  .blog-content h3 {
+    @apply text-2xl font-semibold mb-4 mt-8;
+  }
+
+  .blog-content ul,
+  .blog-content ol {
+    @apply mb-6 pl-6;
+  }
+
+  .blog-content li {
+    @apply mb-2;
+  }
+
+  .blog-content a {
+    @apply text-primary hover:text-primary/80 underline underline-offset-2;
+  }
+
+  .blog-content blockquote {
+    @apply border-l-4 border-primary pl-6 py-4 my-8 bg-card/50 rounded-r-lg;
+  }
+
+  .blog-content blockquote p {
+    @apply mb-0 text-sm italic text-foreground/80;
+  }
+
+  .blog-content blockquote p:last-child {
+    @apply font-semibold not-italic text-foreground/90 mt-2;
+  }
+
+  .blog-content pre {
+    @apply my-6 p-4 rounded-lg bg-card overflow-x-auto;
+  }
+
+  .blog-content code {
+    @apply px-1.5 py-0.5 rounded text-sm;
+  }
+
+  .blog-content img {
+    @apply my-8 rounded-lg shadow-lg w-full max-w-4xl mx-auto object-contain;
+  }
+
+  .blog-cover-image {
+    @apply w-full max-w-4xl mx-auto object-contain rounded-lg shadow-xl mb-8;
+  }
+
+  .blog-thumbnail {
+    @apply w-full h-48 object-cover transition-transform duration-300 hover:scale-105;
+  }
+}
