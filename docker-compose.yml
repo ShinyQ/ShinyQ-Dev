@@ -3,7 +3,7 @@ services:
     build:
       context: ./ShinyQ
       dockerfile: Dockerfile
-      dockerfile: Dockerfile
+
     container_name: shinyq-app
     ports:
       - "3000:3000"
