@@ -3,15 +3,7 @@ services:
     build:
       context: ./ShinyQ
       dockerfile: Dockerfile
-      args:
-        GITHUB_API_TOKEN: ${SHINYQ_GITHUB_TOKEN}
-        CLOUDFLARE_R2_ACCOUNT_ID: ${SHINYQ_R2_ACCOUNT_ID}
-        CLOUDFLARE_R2_ACCESS_KEY_ID: ${SHINYQ_R2_ACCESS_KEY_ID}
-        CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${SHINYQ_R2_SECRET_ACCESS_KEY}
-        CLOUDFLARE_R2_BUCKET_NAME: ${SHINYQ_R2_BUCKET_NAME}
-        CLOUDFLARE_ACCOUNT_ID: ${SHINYQ_R2_ACCOUNT_ID}
-        CLOUDFLARE_KV_API_TOKEN: ${SHINYQ_R2_KV_API_TOKEN}
-        CLOUDFLARE_KV_NAMESPACE_ID: ${SHINYQ_R2_KV_NAMESPACE_ID}
+      dockerfile: Dockerfile
     container_name: shinyq-app
     ports:
       - "3000:3000"

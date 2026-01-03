@@ -10,6 +10,8 @@ export const metadata = {
   description: siteMetadata.home.description,
 };
 
+export const revalidate = 3600;
+
 export default function Home() {
   return (
     <>
