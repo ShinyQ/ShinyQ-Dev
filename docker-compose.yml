@@ -3,13 +3,11 @@ services:
     build:
       context: ./ShinyQ
       dockerfile: Dockerfile
-
     container_name: shinyq-app
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-
       - CLOUDFLARE_R2_ACCOUNT_ID=${SHINYQ_R2_ACCOUNT_ID}
       - CLOUDFLARE_R2_ACCESS_KEY_ID=${SHINYQ_R2_ACCESS_KEY_ID}
       - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${SHINYQ_R2_SECRET_ACCESS_KEY}
@@ -23,37 +21,21 @@ services:
       - minerva-network
     volumes:
       - shinyq-data:/app/.next/cache
-
   nginx:
     image: nginx:alpine
     container_name: minerva-nginx
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
     restart: unless-stopped
     networks:
       - minerva-network
     depends_on:
       - shinyq
-
-  certbot:
-    image: certbot/certbot
-    container_name: minerva-certbot
-    volumes:
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
-
-
 networks:
   minerva-network:
     driver: bridge
-
 volumes:
   shinyq-data:
-  certbot-conf:
-  certbot-www:
 
