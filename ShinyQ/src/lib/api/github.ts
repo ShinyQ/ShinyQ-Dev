@@ -51,11 +51,9 @@ export async function getPublicRepositories(
             updated_at: repo.updated_at ?? new Date().toISOString(),
         }));
 
-        try {
-            await kv.putKey(NAMESPACE_ID, CACHE_KEY, JSON.stringify(topRepos), CACHE_TTL);
-        } catch (err) {
-            console.error("[KV] Error during SET:", err);
-        }
+        // Fire-and-forget cache update to improve response time
+        kv.putKey(NAMESPACE_ID, CACHE_KEY, JSON.stringify(topRepos), CACHE_TTL)
+            .catch(err => console.error("[KV] Error during SET:", err));
 
         return topRepos;
     } catch (err) {

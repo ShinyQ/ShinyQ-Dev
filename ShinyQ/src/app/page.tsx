@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import HeroSection from '@/components/home/HeroSection';
 import TechStack from '@/components/home/TechStack';
 import NotableProjects from '@/components/home/NotableProjects';
@@ -18,8 +19,12 @@ export default function Home() {
       <HeroSection />
       <TechStack />
       <NotableProjects />
-      <GithubSection />
-      <LatestBlogs />
+      <Suspense fallback={<div className="py-12 text-center">Loading GitHub stats...</div>}>
+        <GithubSection />
+      </Suspense>
+      <Suspense fallback={<div className="py-16 text-center">Loading latest blogs...</div>}>
+        <LatestBlogs />
+      </Suspense>
     </>
   );
 }

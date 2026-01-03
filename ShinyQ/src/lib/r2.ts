@@ -69,7 +69,7 @@ class R2ClientManager {
                 accessKeyId: CLOUDFLARE.R2.ACCESS_KEY_ID,
                 secretAccessKey: CLOUDFLARE.R2.SECRET_ACCESS_KEY,
             },
-            forcePathStyle: true,
+            forcePathStyle: false, 
         };
     }
 
