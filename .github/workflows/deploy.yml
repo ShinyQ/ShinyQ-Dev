@@ -40,6 +40,5 @@ jobs:
 
             # ── Deploy ──
             git pull origin main
-            bun install
             docker compose up -d --build --remove-orphans
             docker system prune -f
