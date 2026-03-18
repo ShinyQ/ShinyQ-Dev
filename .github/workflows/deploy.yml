@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/ShinyQ-Dev
+            cd ~/ShinyQ-Dev
 
             # ── Write .env (infra secrets only) ──
             cat > .env << 'ENVEOF'
