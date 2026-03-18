@@ -1,67 +1,13 @@
 import { projects } from '@/data/projects';
-import type { Project as ProjectType } from '@/data/projects';
+import { enhanceProjects } from '@/lib/projects';
 import ProjectGrid from '@/components/project/ProjectGrid';
 import CategoryFilter from '@/components/project/CategoryFilter';
-import { getSignedFileUrl, listDirectoryFiles } from '@/lib/r2';
-import type { R2File } from '@/lib/r2';
-
-interface GalleryImage {
-    src: string;
-    alt: string;
-}
-
-interface EnhancedProject extends Omit<ProjectType, 'gallery'> {
-    gallery: GalleryImage[];
-}
 
 export default async function ProjectsPage() {
-    const enhancedProjects = await Promise.all(
-        projects.map(async (project): Promise<EnhancedProject> => {
-            const signedCoverImage = await getSignedFileUrl(project.coverImage);
-            const galleryImages: GalleryImage[] = [];
-
-            if (project.gallery) {
-                if (typeof project.gallery === 'string') {
-                    const directoryPath = project.gallery.endsWith('/')
-                        ? project.gallery
-                        : `${project.gallery}/`;
-
-                    const files: R2File[] = await listDirectoryFiles(directoryPath);
-
-                    const validFiles = files.filter((file) => {
-                        const relativePath = file.key.substring(directoryPath.length);
-                        return !relativePath.includes('/');
-                    });
-
-                    const imagePromises = validFiles.map(
-                        async (file, idx): Promise<GalleryImage> => ({
-                            src: await getSignedFileUrl(file.key),
-                            alt: `${project.title} ${idx + 1}`,
-                        })
-                    );
-
-                    const images = await Promise.all(imagePromises);
-                    galleryImages.push(...images);
-                }
-            }
-
-            if (galleryImages.length === 0) {
-                galleryImages.push({
-                    src: signedCoverImage,
-                    alt: project.title,
-                });
-            }
-
-            return {
-                ...project,
-                coverImage: signedCoverImage,
-                gallery: galleryImages,
-            };
-        })
-    );
+    const enhancedProjects = await enhanceProjects(projects);
 
     return (
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto py-16 md:py-20">
             <div className="mb-12">
                 <div className="text-sm text-primary font-mono mb-2">
                     {"// featured projects"}

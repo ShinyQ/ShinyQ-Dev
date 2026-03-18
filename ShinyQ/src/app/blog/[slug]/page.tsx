@@ -1,4 +1,4 @@
-import { getAllPosts, getPostBySlug } from '@/lib/blog';
+import { getAllPosts } from '@/lib/blog';
 import { getSignedFileUrl } from '@/lib/r2';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -16,7 +16,10 @@ export async function generateStaticParams() {
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const post = await getPostBySlug(slug);
+
+    // Single read: get all posts then find current + related
+    const allPosts = await getAllPosts();
+    const post = allPosts.find((p) => p.slug === slug);
 
     if (!post) {
         notFound();
@@ -24,17 +27,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
     const coverImage = post.coverImage ? await getSignedFileUrl(post.coverImage) : '/placeholder.svg';
 
-    // Get related posts
-    const allPosts = await getAllPosts();
+    // Find related posts by shared tags, fallback to recent
     const otherPosts = allPosts.filter((p) => p.slug !== slug);
+    const relatedByTags = otherPosts.filter((p) =>
+        p.tags.some((tag) => post.tags.includes(tag))
+    );
+    const finalRelatedPosts = (relatedByTags.length ? relatedByTags : otherPosts).slice(0, 3);
 
-    const relatedPosts = otherPosts
-        .filter((p) => p.tags.some((tag) => post.tags.includes(tag)))
-        .slice(0, 3);
-
-    const finalRelatedPosts = relatedPosts.length ? relatedPosts : otherPosts.slice(0, 3);
-
-    // Get signed URLs for related posts
+    // Resolve cover images concurrently
     const relatedPostsWithImages = await Promise.all(
         finalRelatedPosts.map(async (p) => ({
             ...p,
@@ -45,7 +45,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     return (
         <>
             <div className="w-full bg-muted mb-12">
-                <div className="container mx-auto px-4 py-12 md:py-20">
+                <div className="container mx-auto py-16 md:py-20">
                     <div className="flex flex-wrap gap-2 mb-6">
                         {post.tags?.map((tag) => (
                             <span
@@ -83,7 +83,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 </div>
             </div>
 
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <div className="max-w-4xl mx-auto">
                     {coverImage && coverImage !== '/placeholder.svg' && (
                         <div className="mb-8">
@@ -126,12 +126,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                                         className="group h-full"
                                     >
                                         <div className="bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 h-full flex flex-col">
-                                            <div className="aspect-video overflow-hidden relative">
+                                            <div className="aspect-video overflow-hidden relative will-change-transform">
                                                 <Image
                                                     src={related.coverImage}
                                                     alt={related.title}
                                                     fill
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                                    className="object-cover group-hover:scale-[1.05] backface-hidden transition-transform duration-700"
                                                 />
                                             </div>
                                             <div className="p-5 flex flex-col flex-grow">

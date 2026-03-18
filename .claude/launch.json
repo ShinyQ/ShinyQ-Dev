@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shinyq-dev",
+      "runtimeExecutable": "/Users/shinyq/.bun/bin/bun",
+      "runtimeArgs": ["run", "--cwd", "ShinyQ", "dev"],
+      "port": 3000
+    }
+  ]
+}

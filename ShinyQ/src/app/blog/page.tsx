@@ -15,7 +15,7 @@ export default async function BlogPage() {
     );
 
     return (
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto py-16 md:py-20">
             <div className="mb-10">
                 <div className="text-sm text-primary font-mono mb-2">// thoughts and insights</div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-6">Blog</h1>

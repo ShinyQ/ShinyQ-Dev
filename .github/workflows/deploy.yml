@@ -20,7 +20,25 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/ShinyQ-Dev
+
+            # ── Write .env (infra secrets only) ──
+            cat > .env << 'ENVEOF'
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=shinyq
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/shinyq
+            REDIS_URL=redis://default:${{ secrets.REDIS_PASSWORD }}@redis:6379
+            NODE_ENV=production
+            ENVEOF
+
+            chmod 600 .env
+
+            # ── App .env files are managed manually on the VPS ──
+            # ShinyQ/.env → Cloudflare, GitHub tokens
+            # Set up once with: cp ShinyQ/.env.example ShinyQ/.env
+
+            # ── Deploy ──
             git pull origin main
-            docker-compose down --remove-orphans
-            docker-compose up -d --build
+            docker compose up -d --build --remove-orphans
             docker system prune -f

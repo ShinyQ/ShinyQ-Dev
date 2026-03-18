@@ -8,7 +8,7 @@ export default async function AboutPage() {
     const profileImage = await getSignedFileUrl('photo/profile.png');
 
     return (
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto py-16 md:py-20">
             <div className="flex flex-col md:flex-row gap-12">
                 {/* Left Section */}
                 <div className="md:w-2/3">

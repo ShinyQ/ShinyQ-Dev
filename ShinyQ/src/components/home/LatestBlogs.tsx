@@ -17,8 +17,8 @@ export default async function LatestBlogs() {
     );
 
     return (
-        <section className="py-16">
-            <div className="container mx-auto px-4">
+        <section className="py-16 md:py-20">
+            <div className="container mx-auto">
                 <div className="mb-10 flex justify-between items-end">
                     <div>
                         <h2 className="text-2xl md:text-3xl font-bold">From My Blog</h2>
@@ -41,12 +41,13 @@ export default async function LatestBlogs() {
                         {postsWithSignedUrls.map((post) => (
                             <Link key={post.slug} href={`/blog/${post.slug}`} className="block h-full">
                                 <div className="bg-card rounded-lg overflow-hidden border border-border h-full hover:border-primary transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
-                                    <div className="h-48 overflow-hidden relative">
+                                    <div className="h-48 overflow-hidden relative will-change-transform">
                                         <Image
                                             src={post.coverImage}
                                             alt={post.title}
                                             fill
-                                            className="object-cover transition-transform duration-300 hover:scale-105"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                            className="object-cover transition-transform duration-300 hover:scale-[1.05] backface-hidden"
                                         />
                                     </div>
                                     <div className="p-6 flex flex-col h-[calc(100%-12rem)]">

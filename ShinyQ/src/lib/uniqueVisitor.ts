@@ -60,27 +60,3 @@ export async function getUniqueVisitorCount(): Promise<number> {
     }
 }
 
-export async function incrementVisitorCount(ip: string): Promise<number> {
-    const uniqueKey = `${config.VISITOR.UNIQUE_KEY}:${ip}`;
-
-    try {
-        const exists = await kv.getKey(NAMESPACE_ID, uniqueKey);
-        if (exists) {
-            const current = await kv.getKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY);
-            const count = parseInt(current as string || "0", 10);
-            await kv.putKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY, (count + 1).toString());
-            return count + 1;
-        }
-
-        await Promise.all([
-            kv.putKey(NAMESPACE_ID, uniqueKey, "1", config.VISITOR.EXPIRY),
-            kv.putKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY, "1")
-        ]);
-
-        const count = await kv.getKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY);
-        return parseInt(count as string || "0", 10);
-    } catch (error) {
-        console.error("[Visitor] Error incrementing count:", error);
-        return 0;
-    }
-}

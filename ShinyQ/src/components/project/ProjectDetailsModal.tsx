@@ -38,7 +38,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, open
     return (
         <AnimatePresence>
             {open && (
-                <>
+                <React.Fragment key={`project-details-${project.id}`}>
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -263,10 +263,11 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, open
                             </motion.div>
                         </div>
                     </motion.div>
-                </>
+                </React.Fragment>
             )}
 
             <GalleryModal
+                key={`project-gallery-${project.id}`}
                 images={project.gallery}
                 open={galleryOpen}
                 startIndex={galleryIndex}

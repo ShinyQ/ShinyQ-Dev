@@ -1,5 +1,15 @@
 import { getPublicRepositories } from '@/lib/api/github';
 
+type RepoInfo = {
+    name: string;
+    description: string | null;
+    html_url: string;
+    stargazers_count: number;
+    forks_count: number;
+    language: string | null;
+    updated_at: string;
+};
+
 function formatDate(dateStr: string) {
     const date = new Date(dateStr);
     const day = String(date.getDate()).padStart(2, '0');
@@ -9,22 +19,18 @@ function formatDate(dateStr: string) {
 }
 
 export default async function GithubSection() {
-    let repos: any[] = [];
+    let repos: RepoInfo[] = [];
     let error: string | null = null;
 
     try {
-        repos = (await getPublicRepositories()) as any[];
+        repos = await getPublicRepositories();
     } catch (e: unknown) {
-        if (e && typeof e === 'object' && 'message' in e) {
-            error = (e as any).message || 'Failed to load repositories.';
-        } else {
-            error = 'Failed to load repositories.';
-        }
+        error = e instanceof Error ? e.message : 'Failed to load repositories.';
     }
 
     return (
-        <section className="py-12">
-            <div className="container mx-auto px-4">
+        <section className="py-16 md:py-20">
+            <div className="container mx-auto">
                 <div className="mb-6 flex justify-between items-end">
                     <h2 className="text-xl md:text-2xl font-bold">My Top GitHub Repos</h2>
                     <a
@@ -40,10 +46,10 @@ export default async function GithubSection() {
                 {error && <div className="text-center text-red-500 py-6">{error}</div>}
                 {!error && (
                     <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {repos && repos.length > 0 ? (
-                            repos.map((repo: any, index: number) => (
+                        {repos.length > 0 ? (
+                            repos.map((repo) => (
                                 <li
-                                    key={repo.id || `repo-${index}`}
+                                    key={repo.name}
                                     className="flex items-start gap-3 bg-muted/60 border border-border rounded-md px-4 py-3 hover:shadow-md transition-shadow duration-200 min-h-[120px]"
                                 >
                                     <div className="pt-1">

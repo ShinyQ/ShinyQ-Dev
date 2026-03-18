@@ -6,8 +6,8 @@ import Typewriter from '@/components/custom/Typewriter';
 
 export default function HeroSection() {
     return (
-        <section className="py-16 md:py-24 min-h-[600px]">
-            <div className="container mx-auto px-4">
+        <section className="py-16 md:py-20 min-h-[600px]">
+            <div className="container mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
                     <div className="min-h-[400px] flex flex-col justify-center">
                         <div className="space-y-6">

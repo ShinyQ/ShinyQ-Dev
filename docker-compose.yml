@@ -1,4 +1,58 @@
 services:
+  # ── Reverse Proxy ──────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: minerva-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    restart: unless-stopped
+    networks:
+      - minerva-network
+    depends_on:
+      - shinyq
+
+  # ── Infrastructure ────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: minerva-postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+    networks:
+      - minerva-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shinyq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: minerva-redis
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    networks:
+      - minerva-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Apps ───────────────────────────────────────────
   shinyq:
     build:
       context: ./ShinyQ
@@ -6,36 +60,25 @@ services:
     container_name: shinyq-app
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - CLOUDFLARE_R2_ACCOUNT_ID=${SHINYQ_R2_ACCOUNT_ID}
-      - CLOUDFLARE_R2_ACCESS_KEY_ID=${SHINYQ_R2_ACCESS_KEY_ID}
-      - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${SHINYQ_R2_SECRET_ACCESS_KEY}
-      - CLOUDFLARE_R2_BUCKET_NAME=${SHINYQ_R2_BUCKET_NAME}
-      - GITHUB_API_TOKEN=${SHINYQ_GITHUB_TOKEN}
-      - CLOUDFLARE_ACCOUNT_ID=${SHINYQ_R2_ACCOUNT_ID}
-      - CLOUDFLARE_KV_API_TOKEN=${SHINYQ_R2_KV_API_TOKEN}
-      - CLOUDFLARE_KV_NAMESPACE_ID=${SHINYQ_R2_KV_NAMESPACE_ID}
+    env_file:
+      - .env
+      - ./ShinyQ/.env
     restart: unless-stopped
     networks:
       - minerva-network
     volumes:
       - shinyq-data:/app/.next/cache
-  nginx:
-    image: nginx:alpine
-    container_name: minerva-nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-    restart: unless-stopped
-    networks:
-      - minerva-network
     depends_on:
-      - shinyq
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 networks:
   minerva-network:
     driver: bridge
-volumes:
-  shinyq-data:
 
+volumes:
+  postgres-data:
+  redis-data:
+  shinyq-data:

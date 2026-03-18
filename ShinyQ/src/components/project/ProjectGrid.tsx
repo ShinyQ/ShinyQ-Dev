@@ -86,11 +86,11 @@ const ProjectGrid: React.FC<ProjectGridProps> = ({ projects }) => {
             data-tags={project.tags.join(",")}
             key={project.id}
           >
-            <div className="h-48 overflow-hidden rounded-t-lg flex-shrink-0">
+            <div className="h-48 overflow-hidden rounded-t-lg flex-shrink-0 will-change-transform">
               <img
                 src={project.coverImage}
                 alt={project.title}
-                className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.05] backface-hidden"
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"

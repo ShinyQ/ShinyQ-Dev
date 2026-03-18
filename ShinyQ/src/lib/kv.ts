@@ -62,7 +62,11 @@ export class KV {
             const raw = await res.text();
 
             try {
-                const parsed = JSON.parse(raw);
+                let parsed = JSON.parse(raw);
+                // Handle legacy double-encoded JSON strings
+                if (typeof parsed === 'string') {
+                    try { parsed = JSON.parse(parsed); } catch { /* use as-is */ }
+                }
                 this.setMemoryCache(namespaceId, key, parsed);
                 return parsed;
             } catch (parseErr) {
@@ -128,10 +132,4 @@ export class KV {
         return this.getKey<T>(namespaceId, key);
     }
 
-    getMemoryCacheStats(): { size: number; entries: [string, CacheEntry<any>][] } {
-        return {
-            size: this.memoryCache.size,
-            entries: [...this.memoryCache.entries()]
-        };
-    }
 }

@@ -49,12 +49,13 @@ export default function NotableProjectsClient({ projects }: NotableProjectsClien
                         className="group relative bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2"
                     >
                         {/* Cover Image */}
-                        <div className="relative h-64 overflow-hidden">
+                        <div className="relative h-64 overflow-hidden will-change-transform">
                             <Image
                                 src={project.coverImage}
                                 alt={project.title}
                                 fill
-                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                sizes="(max-width: 1024px) 100vw, 33vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-[1.08] backface-hidden"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-90 group-hover:opacity-95 transition-opacity duration-300" />
 

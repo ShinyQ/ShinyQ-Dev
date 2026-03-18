@@ -13,7 +13,7 @@ const FILTERS = [
 
 export default function JourneyPage() {
     return (
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto py-16 md:py-20">
             <Timeline
                 items={timelineItems}
                 filters={FILTERS}

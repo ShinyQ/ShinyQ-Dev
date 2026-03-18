@@ -33,11 +33,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Track unique visitor
+  // Track unique visitor (fire-and-forget, don't block page render)
   const headersList = await headers();
   const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
   const userAgent = headersList.get('user-agent') || 'unknown';
-  await trackUniqueVisitor(ip, userAgent);
+  trackUniqueVisitor(ip, userAgent).catch(() => {});
 
   return (
     <html lang="en" suppressHydrationWarning>

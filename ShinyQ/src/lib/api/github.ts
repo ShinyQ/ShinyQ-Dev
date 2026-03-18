@@ -10,7 +10,7 @@ const NAMESPACE_ID = config.CLOUDFLARE.KV.KV_NAMESPACE_ID as string;
 
 const kv = new KV();
 
-type RepoInfo = {
+export type RepoInfo = {
     name: string;
     description: string | null;
     html_url: string;
@@ -24,8 +24,8 @@ export async function getPublicRepositories(
     username = "ShinyQ"
 ): Promise<RepoInfo[]> {
     try {
-        const cached = await kv.getKey(NAMESPACE_ID, CACHE_KEY);
-        if (cached) { return JSON.parse(cached as string) as RepoInfo[]; }
+        const cached = await kv.getKey<RepoInfo[]>(NAMESPACE_ID, CACHE_KEY);
+        if (cached) { return cached; }
     } catch (err) {
         console.error("[KV] Error during GET:", err);
     }
@@ -37,22 +37,21 @@ export async function getPublicRepositories(
             per_page: 100,
         });
 
-        const sortedRepos = [...repos].sort(
-            (a, b) => (b.stargazers_count ?? 0) - (a.stargazers_count ?? 0)
-        );
+        const topRepos: RepoInfo[] = [...repos]
+            .sort((a, b) => (b.stargazers_count ?? 0) - (a.stargazers_count ?? 0))
+            .slice(0, 6)
+            .map((repo) => ({
+                name: repo.name,
+                description: repo.description,
+                html_url: repo.html_url,
+                stargazers_count: repo.stargazers_count ?? 0,
+                forks_count: repo.forks_count ?? 0,
+                language: repo.language ?? null,
+                updated_at: repo.updated_at ?? new Date().toISOString(),
+            }));
 
-        const topRepos: RepoInfo[] = sortedRepos.slice(0, 6).map((repo) => ({
-            name: repo.name,
-            description: repo.description,
-            html_url: repo.html_url,
-            stargazers_count: repo.stargazers_count ?? 0,
-            forks_count: repo.forks_count ?? 0,
-            language: repo.language ?? null,
-            updated_at: repo.updated_at ?? new Date().toISOString(),
-        }));
-
-        // Fire-and-forget cache update to improve response time
-        kv.putKey(NAMESPACE_ID, CACHE_KEY, JSON.stringify(topRepos), CACHE_TTL)
+        // Fire-and-forget cache update
+        kv.putKey(NAMESPACE_ID, CACHE_KEY, topRepos, CACHE_TTL)
             .catch(err => console.error("[KV] Error during SET:", err));
 
         return topRepos;
