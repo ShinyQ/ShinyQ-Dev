@@ -1,14 +1,11 @@
 import { Octokit } from "@octokit/core";
-import { KV } from "../kv";
+import { cache } from "@/lib/cache";
 import { config } from "@/config";
 
 const octokit = new Octokit({ auth: config.GITHUB.API_TOKEN });
 
 const CACHE_KEY = config.GITHUB.CACHE.KEY_TOP_REPO;
 const CACHE_TTL = config.GITHUB.CACHE.TOP_REPO_TTL;
-const NAMESPACE_ID = config.CLOUDFLARE.KV.KV_NAMESPACE_ID as string;
-
-const kv = new KV();
 
 export type RepoInfo = {
     name: string;
@@ -24,10 +21,10 @@ export async function getPublicRepositories(
     username = "ShinyQ"
 ): Promise<RepoInfo[]> {
     try {
-        const cached = await kv.getKey<RepoInfo[]>(NAMESPACE_ID, CACHE_KEY);
-        if (cached) { return cached; }
+        const cached = await cache.get<RepoInfo[]>(CACHE_KEY);
+        if (cached) return cached;
     } catch (err) {
-        console.error("[KV] Error during GET:", err);
+        console.error("[Cache] Error during GET:", err);
     }
 
     try {
@@ -51,8 +48,8 @@ export async function getPublicRepositories(
             }));
 
         // Fire-and-forget cache update
-        kv.putKey(NAMESPACE_ID, CACHE_KEY, topRepos, CACHE_TTL)
-            .catch(err => console.error("[KV] Error during SET:", err));
+        cache.set(CACHE_KEY, topRepos, CACHE_TTL)
+            .catch(err => console.error("[Cache] Error during SET:", err));
 
         return topRepos;
     } catch (err) {

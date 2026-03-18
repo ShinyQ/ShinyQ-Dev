@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const rafRef = useRef<number | null>(null);
 
     const isActive = (path: string) => {
         if (path === '/' && pathname === '/') return true;
@@ -26,16 +27,23 @@ export default function Navbar() {
         return false;
     };
 
-    useEffect(() => {
-        const handleScroll = () => {
+    // Throttled scroll handler using requestAnimationFrame
+    const handleScroll = useCallback(() => {
+        if (rafRef.current !== null) return;
+        rafRef.current = requestAnimationFrame(() => {
             setIsScrolled(window.scrollY > 10);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        handleScroll(); // Initial check
-
-        return () => window.removeEventListener('scroll', handleScroll);
+            rafRef.current = null;
+        });
     }, []);
+
+    useEffect(() => {
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        };
+    }, [handleScroll]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -50,7 +58,7 @@ export default function Navbar() {
             }
         };
 
-        window.addEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize, { passive: true });
         document.addEventListener('keydown', handleKeyDown);
 
         return () => {

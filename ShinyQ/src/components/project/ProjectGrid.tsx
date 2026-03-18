@@ -91,9 +91,8 @@ const ProjectGrid: React.FC<ProjectGridProps> = ({ projects }) => {
                 src={project.coverImage}
                 alt={project.title}
                 className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.05] backface-hidden"
-                loading="eager"
+                loading="lazy"
                 decoding="async"
-                fetchPriority="high"
                 onError={(e) => {
                   const img = e.target as HTMLImageElement;
                   img.src = "/placeholder.svg";

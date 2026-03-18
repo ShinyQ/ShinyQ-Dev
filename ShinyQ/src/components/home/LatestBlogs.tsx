@@ -19,17 +19,12 @@ export default async function LatestBlogs() {
     return (
         <section className="py-16 md:py-20">
             <div className="container mx-auto">
-                <div className="mb-10 flex justify-between items-end">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-bold">From My Blog</h2>
-                    </div>
-                    <Link
-                        href="/blog"
-                        className="bg-transparent border border-border text-foreground hover:text-primary hover:border-primary transition-colors py-2 px-4 rounded-md flex items-center"
-                    >
-                        View All
-                        <ArrowRight size={16} className="ml-1" />
-                    </Link>
+                <div className="mb-10 text-center">
+                    <div className="text-sm text-primary font-mono mb-2">// latest writings</div>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4">From My Blog</h2>
+                    <p className="text-foreground/70 max-w-2xl mx-auto">
+                        Thoughts, tutorials, and insights on software engineering, architecture, and the tech I work with.
+                    </p>
                 </div>
 
                 {postsWithSignedUrls.length === 0 ? (
@@ -46,6 +41,7 @@ export default async function LatestBlogs() {
                                             src={post.coverImage}
                                             alt={post.title}
                                             fill
+                                            unoptimized
                                             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                             className="object-cover transition-transform duration-300 hover:scale-[1.05] backface-hidden"
                                         />
@@ -76,6 +72,16 @@ export default async function LatestBlogs() {
                         ))}
                     </div>
                 )}
+
+                <div className="mt-10 text-center">
+                    <Link
+                        href="/blog"
+                        className="inline-flex items-center gap-2 bg-transparent border border-border text-foreground hover:text-primary hover:border-primary transition-colors py-2 px-6 rounded-md text-sm font-medium"
+                    >
+                        View All Posts
+                        <ArrowRight size={16} />
+                    </Link>
+                </div>
             </div>
         </section>
     );

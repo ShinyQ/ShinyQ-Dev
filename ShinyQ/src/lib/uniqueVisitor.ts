@@ -1,8 +1,5 @@
-import { KV } from "./kv";
+import { cache } from "@/lib/cache";
 import { config } from "@/config";
-
-const NAMESPACE_ID = config.CLOUDFLARE.KV.KV_NAMESPACE_ID || '';
-const kv = new KV();
 
 async function hashString(str: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -13,27 +10,18 @@ async function hashString(str: string): Promise<string> {
 }
 
 export async function trackUniqueVisitor(ip: string, userAgent: string): Promise<boolean> {
-    if (!NAMESPACE_ID) {
-        console.warn('[Visitor Tracking] KV Namespace ID not configured, skipping');
-        return false;
-    }
-
     try {
         const visitorId = await hashString(`${ip}-${userAgent}`);
         const uniqueKey = `${config.VISITOR.UNIQUE_KEY}:${visitorId}`;
 
-        // Check if already exists
-        const exists = await kv.getKey(NAMESPACE_ID, uniqueKey);
-        if (exists) { return false; }
+        // Check if already tracked
+        const exists = await cache.exists(uniqueKey);
+        if (exists) return false;
 
-        // Use a single transaction to update both the visitor and count
-        const current = await kv.getKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY);
-        const count = current ? parseInt(current as string, 10) || 0 : 0;
-
-        // Batch the operations
+        // Mark visitor and increment count atomically
         await Promise.all([
-            kv.putKey(NAMESPACE_ID, uniqueKey, "1", config.VISITOR.EXPIRY),
-            kv.putKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY, (count + 1).toString())
+            cache.set(uniqueKey, "1", config.VISITOR.EXPIRY),
+            cache.incr(config.VISITOR.UNIQUE_KEY),
         ]);
 
         return true;
@@ -44,19 +32,14 @@ export async function trackUniqueVisitor(ip: string, userAgent: string): Promise
 }
 
 export async function getUniqueVisitorCount(): Promise<number> {
-    if (!NAMESPACE_ID) {
-        return 0;
-    }
-
     try {
-        const count = await kv.getKey(NAMESPACE_ID, config.VISITOR.UNIQUE_KEY);
-        if (!count) { return 0; }
+        const count = await cache.get<number | string>(config.VISITOR.UNIQUE_KEY);
+        if (!count) return 0;
 
-        const parsedCount = parseInt(count as string, 10);
-        return isNaN(parsedCount) ? 0 : parsedCount;
+        const parsed = typeof count === 'number' ? count : parseInt(count, 10);
+        return isNaN(parsed) ? 0 : parsed;
     } catch (error) {
         console.error("[Visitor Count] Error:", error);
         return 0;
     }
 }
-

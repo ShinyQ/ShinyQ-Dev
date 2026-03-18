@@ -20,11 +20,8 @@ export default function TimelineItem({ item }: TimelineItemProps) {
                     {formatDate(item.startDate)} — {item.endDate === "Present" ? "Present" : formatDate(item.endDate)}
                 </span>
             </div>
-            <motion.div
-                key={item.slug}
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="bg-card rounded-lg p-6 border border-border shadow-lg hover:shadow-2xl hover:border-primary transition-all duration-300"
+            <div
+                className="bg-card rounded-lg p-6 border border-border shadow-lg hover:shadow-2xl hover:border-primary hover:scale-[1.02] transition-all duration-300"
             >
                 <div className="flex flex-col lg:flex-row gap-4">
                     {item.logo && (
@@ -33,6 +30,7 @@ export default function TimelineItem({ item }: TimelineItemProps) {
                                 src={item.logo}
                                 alt={`${item.title} logo`}
                                 className="w-full h-full object-contain"
+                                loading="lazy"
                             />
                         </div>
                     )}
@@ -58,21 +56,18 @@ export default function TimelineItem({ item }: TimelineItemProps) {
                 )}
                 {item.tools && item.tools.length > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                        {item.tools.map((tool, i) => (
-                            <motion.span
+                        {item.tools.map((tool) => (
+                            <span
                                 key={tool}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
                                 className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground/70"
                             >
                                 {tool}
-                            </motion.span>
+                            </span>
                         ))}
                     </div>
                 )}
                 <div className="mt-5 text-xs text-foreground/60 uppercase">{item.type}</div>
-            </motion.div>
+            </div>
         </motion.div>
     );
-} 
+}

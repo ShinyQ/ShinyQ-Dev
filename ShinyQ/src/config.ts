@@ -16,9 +16,6 @@ const configSchema = z.object({
             TOP_REPO_TTL: z.number().default(ONE_WEEK),
         }),
     }),
-    CACHE: z.object({
-        DEFAULT_TTL: z.number().default(FIVE_MINUTES * 1000), // in milliseconds
-    }),
     VISITOR: z.object({
         UNIQUE_KEY: z.string(),
         EXPIRY: z.number().default(FIVE_MINUTES), // in seconds
@@ -28,11 +25,6 @@ const configSchema = z.object({
         OPERATION_TIMEOUT: z.number().default(3000), // in milliseconds
     }),
     CLOUDFLARE: z.object({
-        KV: z.object({
-            ACCOUNT_ID: z.string().optional(),
-            API_TOKEN: z.string().optional(),
-            KV_NAMESPACE_ID: z.string().optional(),
-        }),
         R2: z.object({
             ACCOUNT_ID: z.string().optional(),
             ACCESS_KEY_ID: z.string().optional(),
@@ -51,9 +43,6 @@ const config = configSchema.parse({
             TOP_REPO_TTL: ONE_WEEK,
         }
     },
-    CACHE: {
-        DEFAULT_TTL: FIVE_MINUTES * 1000,
-    },
     VISITOR: {
         UNIQUE_KEY: "site:unique_visitors",
         EXPIRY: FIVE_MINUTES,
@@ -63,11 +52,6 @@ const config = configSchema.parse({
         OPERATION_TIMEOUT: 3000,
     },
     CLOUDFLARE: {
-        KV: {
-            ACCOUNT_ID: getEnvVar('CLOUDFLARE_ACCOUNT_ID'),
-            API_TOKEN: getEnvVar('CLOUDFLARE_KV_API_TOKEN'),
-            KV_NAMESPACE_ID: getEnvVar('CLOUDFLARE_KV_NAMESPACE_ID'),
-        },
         R2: {
             ACCOUNT_ID: getEnvVar('CLOUDFLARE_R2_ACCOUNT_ID'),
             ACCESS_KEY_ID: getEnvVar('CLOUDFLARE_R2_ACCESS_KEY_ID'),
@@ -76,27 +60,5 @@ const config = configSchema.parse({
         }
     }
 });
-
-// Validate required environment variables at runtime (server-side only)
-// Commented out to allow app to run without all env vars
-/*
-if (typeof window === 'undefined') {
-    const requiredEnvVars = [
-        'GITHUB_API_TOKEN',
-        'CLOUDFLARE_ACCOUNT_ID',
-        'CLOUDFLARE_KV_API_TOKEN',
-        'CLOUDFLARE_KV_NAMESPACE_ID',
-        'CLOUDFLARE_R2_ACCOUNT_ID',
-        'CLOUDFLARE_R2_ACCESS_KEY_ID',
-        'CLOUDFLARE_R2_SECRET_ACCESS_KEY',
-        'CLOUDFLARE_R2_BUCKET_NAME'
-    ];
-
-    const missingVars = requiredEnvVars.filter(varName => !getEnvVar(varName));
-    if (missingVars.length > 0) {
-        console.warn('Missing required environment variables:', missingVars);
-    }
-}
-*/
 
 export { config };

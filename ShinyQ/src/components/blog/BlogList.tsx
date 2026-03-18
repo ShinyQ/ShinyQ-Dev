@@ -95,7 +95,8 @@ export default function BlogList({ posts, allTags }: BlogListProps) {
                                         src={post.coverImage}
                                         alt={post.title}
                                         fill
-                                        className="object-cover transition-transform duration-300 hover:scale-105"
+                                        unoptimized
+                                        className="object-cover transition-transform duration-300 hover:scale-[1.05] backface-hidden"
                                     />
                                 </div>
                                 <div className="p-6">

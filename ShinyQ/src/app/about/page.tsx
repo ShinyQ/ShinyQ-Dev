@@ -32,6 +32,7 @@ export default async function AboutPage() {
                                         alt="Kurniadi Ahmad Wijaya"
                                         width={400}
                                         height={400}
+                                        unoptimized
                                         className="w-full h-auto"
                                     />
                                 </div>

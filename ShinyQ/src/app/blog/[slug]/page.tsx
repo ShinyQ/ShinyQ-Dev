@@ -92,6 +92,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                                 alt={post.title}
                                 width={1200}
                                 height={630}
+                                unoptimized
                                 className="blog-cover-image"
                             />
                         </div>
@@ -131,11 +132,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                                                     src={related.coverImage}
                                                     alt={related.title}
                                                     fill
+                                                    unoptimized
                                                     sizes="(max-width: 768px) 100vw, 33vw"
                                                     className="object-cover group-hover:scale-[1.05] backface-hidden transition-transform duration-700"
                                                 />
                                             </div>
-                                            <div className="p-5 flex flex-col flex-grow">
+                                            <div className="p-6 flex flex-col flex-grow">
                                                 <h4 className="font-semibold mb-2 line-clamp-2 group-hover:text-primary transition-colors flex-grow">
                                                     {related.title}
                                                 </h4>

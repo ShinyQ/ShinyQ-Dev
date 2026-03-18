@@ -31,26 +31,22 @@ export default async function GithubSection() {
     return (
         <section className="py-16 md:py-20">
             <div className="container mx-auto">
-                <div className="mb-6 flex justify-between items-end">
-                    <h2 className="text-xl md:text-2xl font-bold">My Top GitHub Repos</h2>
-                    <a
-                        href="https://github.com/ShinyQ?tab=repositories"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary text-sm font-medium hover:underline flex items-center gap-1"
-                        aria-label="View all my GitHub repositories"
-                    >
-                        View All Repositories
-                    </a>
+                <div className="mb-10 text-center">
+                    <div className="text-sm text-primary font-mono mb-2">// open source</div>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4">My Top GitHub Repos</h2>
+                    <p className="text-foreground/70 max-w-2xl mx-auto">
+                        Explore my most popular open-source repositories, reflecting my passion for building
+                        scalable and well-crafted software.
+                    </p>
                 </div>
                 {error && <div className="text-center text-red-500 py-6">{error}</div>}
                 {!error && (
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {repos.length > 0 ? (
                             repos.map((repo) => (
                                 <li
                                     key={repo.name}
-                                    className="flex items-start gap-3 bg-muted/60 border border-border rounded-md px-4 py-3 hover:shadow-md transition-shadow duration-200 min-h-[120px]"
+                                    className="flex items-start gap-3 bg-card border border-border rounded-lg p-6 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 min-h-[120px]"
                                 >
                                     <div className="pt-1">
                                         <svg
@@ -104,6 +100,19 @@ export default async function GithubSection() {
                         )}
                     </ul>
                 )}
+
+                <div className="mt-10 text-center">
+                    <a
+                        href="https://github.com/ShinyQ?tab=repositories"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-transparent border border-border text-foreground hover:text-primary hover:border-primary transition-colors py-2 px-6 rounded-md text-sm font-medium"
+                        aria-label="View all my GitHub repositories"
+                    >
+                        View All Repositories
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                </div>
             </div>
         </section>
     );
