@@ -6,6 +6,13 @@
       "runtimeExecutable": "/Users/shinyq/.bun/bin/bun",
       "runtimeArgs": ["run", "--cwd", "ShinyQ", "dev"],
       "port": 3000
+    },
+    {
+      "name": "caloriq-frontend",
+      "runtimeExecutable": "/Users/shinyq/.bun/bin/bun",
+      "runtimeArgs": ["run", "--cwd", "CalorIQ/frontend", "dev"],
+      "port": 4000,
+      "autoPort": false
     }
   ]
 }

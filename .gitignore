@@ -25,6 +25,31 @@ build
 out
 .next
 
+# Python (CalorIQ backend, tooling, etc.)
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+pip-wheel-metadata/
+
+# Virtualenvs
+.venv/
+venv/
+ENV/
+env/
+
+# CalorIQ backend venv (explicit, in case nested)
+CalorIQ/backend/.venv/
+
+# JS/Next caches (repo-wide)
+.turbo/
+.eslintcache
+
 # SSL / Certificates
 *.pem
 *.key
