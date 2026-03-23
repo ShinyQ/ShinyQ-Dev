@@ -19,7 +19,7 @@ async def get_daily_summary(user_id: uuid.UUID, target_date: date) -> dict:
                 id, name, calories, protein_g, carbohydrates_total_g,
                 fat_total_g, fat_saturated_g, fiber_g, sugar_g,
                 sodium_mg, potassium_mg, cholesterol_mg,
-                serving_size_g, meal_type, logged_at, source
+                serving_size_g, quantity_text, meal_type, logged_at, source
             FROM food_entries
             WHERE user_id = $1
               AND logged_at::date = $2
@@ -66,6 +66,7 @@ async def get_daily_summary(user_id: uuid.UUID, target_date: date) -> dict:
             "potassium_mg": row["potassium_mg"],
             "cholesterol_mg": row["cholesterol_mg"],
             "serving_size_g": row["serving_size_g"],
+            "quantity_text": row["quantity_text"],
             "meal_type": meal,
             "logged_at": row["logged_at"].isoformat(),
             "source": row["source"],

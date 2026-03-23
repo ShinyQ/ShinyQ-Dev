@@ -140,12 +140,13 @@ class FoodEntry(Base):
     serving_size_g: Mapped[float] = mapped_column(
         Float, nullable=False, server_default="100"
     )
+    quantity_text: Mapped[str | None] = mapped_column(String(120), nullable=True)
     meal_type: Mapped[str] = mapped_column(String(20), nullable=False)
     logged_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
     source: Mapped[str] = mapped_column(
-        String(50), nullable=False, server_default="mock"
+        String(50), nullable=False, server_default="azure_openai"
     )
     raw_api_response: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

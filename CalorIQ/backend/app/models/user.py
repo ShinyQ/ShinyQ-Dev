@@ -3,15 +3,15 @@ from typing import Optional
 
 
 class ProfileRequest(BaseModel):
-    weight_kg: float = Field(..., gt=0, le=500)
-    height_cm: float = Field(..., gt=0, le=300)
-    age: int = Field(..., gt=0, le=150)
-    gender: str = Field(..., pattern="^(male|female)$")
-    activity_level: str = Field(
-        ...,
+    weight_kg: Optional[float] = Field(None, gt=0, le=500)
+    height_cm: Optional[float] = Field(None, gt=0, le=300)
+    age: Optional[int] = Field(None, gt=0, le=150)
+    gender: Optional[str] = Field(None, pattern="^(male|female)$")
+    activity_level: Optional[str] = Field(
+        None,
         pattern="^(sedentary|light|moderate|active|very_active)$",
     )
-    goal: str = Field(..., pattern="^(lose|maintain|gain)$")
+    goal: Optional[str] = Field(None, pattern="^(lose|maintain|gain)$")
 
 
 class ProfileResponse(BaseModel):

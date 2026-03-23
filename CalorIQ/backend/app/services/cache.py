@@ -59,6 +59,24 @@ class SummaryCache:
         for key in keys_to_delete:
             await r.delete(key)
 
+    @staticmethod
+    async def invalidate_all_for_user(user_id: UUID) -> None:
+        """Invalidate all summary/cache keys for a user (used after profile updates)."""
+        r = get_redis()
+        patterns = [
+            f"summary:daily:{user_id}:*",
+            f"summary:weekly:{user_id}:*",
+            f"summary:monthly:{user_id}:*",
+            f"summary:calendar:{user_id}:*",
+            _recent_foods_key(user_id),
+        ]
+        for pattern in patterns:
+            if "*" in pattern:
+                async for key in r.scan_iter(match=pattern, count=100):
+                    await r.delete(key)
+            else:
+                await r.delete(pattern)
+
 
 class NutritionCache:
     """Cache for recent foods."""

@@ -36,12 +36,12 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 CREATE TABLE IF NOT EXISTS food_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    input_type VARCHAR(10) NOT NULL CHECK (input_type IN ('text', 'image')),
+    input_type VARCHAR(12) NOT NULL CHECK (input_type IN ('text', 'image', 'image_text')),
     original_input TEXT,
     normalized_query TEXT,
     image_url TEXT,
     ai_extracted_text TEXT,
-    ai_confidence VARCHAR(10),
+    ai_confidence DOUBLE PRECISION,
     logged_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -65,9 +65,10 @@ CREATE TABLE IF NOT EXISTS food_entries (
     potassium_mg DECIMAL(8,2),
     cholesterol_mg DECIMAL(8,2),
     serving_size_g DECIMAL(8,2),
+    quantity_text VARCHAR(120),
     meal_type VARCHAR(10) NOT NULL CHECK (meal_type IN ('breakfast','lunch','dinner','snacks')),
     logged_at TIMESTAMPTZ NOT NULL,
-    source VARCHAR(20) DEFAULT 'mock' CHECK (source IN ('api_ninjas', 'ai_estimate', 'manual', 'mock')),
+    source VARCHAR(20) DEFAULT 'azure_openai' CHECK (source IN ('api_ninjas', 'ai_estimate', 'manual', 'azure_openai')),
     raw_api_response JSONB,
     created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -80,7 +81,7 @@ CREATE TABLE IF NOT EXISTS food_cache (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
-    original_query TEXT NOT NULL,
+    original_query TEXT,
     calories DECIMAL(8,2),
     protein_g DECIMAL(8,2),
     carbohydrates_total_g DECIMAL(8,2),

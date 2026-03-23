@@ -1,7 +1,7 @@
 "use client";
 
 import { FoodItem } from "src/components/food/food-item";
-import { Coffee, Sun, Sunset, Cookie } from "lucide-react";
+import { Coffee, Sun, Sunset, Cookie, Trash2 } from "lucide-react";
 import type { MealType, FoodEntry } from "src/lib/types";
 import { cn } from "src/lib/utils";
 
@@ -9,6 +9,8 @@ interface MealCardProps {
   mealType: MealType;
   foods: FoodEntry[];
   totalCalories: number;
+  deletingEntryId?: string | null;
+  onDeleteFood?: (food: FoodEntry) => void;
 }
 
 const mealConfig: Record<
@@ -41,7 +43,13 @@ const mealConfig: Record<
   },
 };
 
-export function MealCard({ mealType, foods, totalCalories }: MealCardProps) {
+export function MealCard({
+  mealType,
+  foods,
+  totalCalories,
+  deletingEntryId,
+  onDeleteFood,
+}: MealCardProps) {
   const config = mealConfig[mealType];
   const Icon = config.icon;
 
@@ -72,7 +80,26 @@ export function MealCard({ mealType, foods, totalCalories }: MealCardProps) {
         {foods.length > 0 ? (
           <div className="divide-y divide-zinc-50">
             {foods.map((food) => (
-              <FoodItem key={food.id} food={food} compact />
+              <div key={food.id} className="group flex items-center gap-1">
+                <div className="flex-1">
+                  <FoodItem food={food} compact />
+                </div>
+                {onDeleteFood && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteFood(food)}
+                    disabled={deletingEntryId === food.id}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50"
+                    title="Delete entry"
+                  >
+                    {deletingEntryId === food.id ? (
+                      <div className="h-3 w-3 animate-spin rounded-full border-[2px] border-red-400 border-t-transparent" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         ) : (

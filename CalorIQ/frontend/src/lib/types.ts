@@ -3,6 +3,7 @@ export type MealType = "breakfast" | "lunch" | "dinner" | "snacks";
 export interface FoodEntry {
   id: string;
   name: string;
+  quantity_text?: string;
   calories: number;
   protein_g: number;
   carbohydrates_total_g: number;
@@ -32,6 +33,8 @@ export interface FoodLogResponse {
   totals: FoodLogTotals;
   meal_type: MealType;
   logged_at: string;
+  source?: "azure_openai";
+  ai_confidence?: number;
 }
 
 export interface DailySummary {

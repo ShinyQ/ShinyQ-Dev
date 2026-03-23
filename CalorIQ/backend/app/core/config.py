@@ -7,8 +7,15 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/1"
     CLERK_ISSUER: str = ""
     CLERK_AUDIENCE: Optional[str] = None
-    CORS_ORIGINS: list[str] = ["http://localhost:3001"]
+    CLERK_SECRET_KEY: str = ""
+    CORS_ORIGINS: list[str] = ["http://localhost:3001", "http://localhost:4000"]
     APP_ENV: str = "development"
+    AZURE_OPENAI_ENDPOINT: str = ""
+    AZURE_OPENAI_API_KEY: str = ""
+    AZURE_OPENAI_DEPLOYMENT: str = "gpt-4o-mini"
+    AZURE_OPENAI_API_VERSION: str = "2024-12-01-preview"
+    AI_RATE_LIMIT_PER_DAY: int = 50
+    LOG_LEVEL: str = "INFO"
 
     model_config = {
         "env_file": ".env",

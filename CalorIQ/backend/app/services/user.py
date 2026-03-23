@@ -1,6 +1,7 @@
 import uuid
 
 from app.db.postgres import get_pool
+from app.services.cache import SummaryCache
 
 ACTIVITY_MULTIPLIERS = {
     "sedentary": 1.2,
@@ -92,6 +93,35 @@ async def get_user_with_profile(user_id: uuid.UUID) -> dict | None:
     return result
 
 
+async def get_profile(user_id: uuid.UUID) -> dict | None:
+    """Fetch user profile only."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT weight_kg, height_cm, age, gender, activity_level, goal,
+                   daily_calorie_target, updated_at
+            FROM user_profiles
+            WHERE user_id = $1
+            """,
+            user_id,
+        )
+
+    if not row:
+        return None
+
+    return {
+        "weight_kg": row["weight_kg"],
+        "height_cm": row["height_cm"],
+        "age": row["age"],
+        "gender": row["gender"],
+        "activity_level": row["activity_level"],
+        "goal": row["goal"],
+        "daily_calorie_target": row["daily_calorie_target"],
+        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+    }
+
+
 async def upsert_profile(
     user_id: uuid.UUID,
     weight_kg: float,
@@ -133,6 +163,8 @@ async def upsert_profile(
             goal,
             daily_calorie_target,
         )
+
+    await SummaryCache.invalidate_all_for_user(user_id)
 
     return {
         "weight_kg": weight_kg,

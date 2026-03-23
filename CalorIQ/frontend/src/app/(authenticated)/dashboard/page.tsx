@@ -5,34 +5,58 @@ import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "src/components/ui/button";
+import { ConfirmDialog } from "src/components/common/confirm-dialog";
 import { CalorieRing } from "src/components/dashboard/calorie-ring";
 import { MealCard } from "src/components/dashboard/meal-card";
 import { FoodItem } from "src/components/food/food-item";
 import { api } from "src/lib/api";
-import type { DailySummary, RecentFood, MealType } from "src/lib/types";
+import type {
+  DailySummary,
+  RecentFood,
+  MealType,
+  FoodEntry,
+  UserProfile,
+} from "src/lib/types";
+import { toast } from "sonner";
 
 const MEAL_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snacks"];
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<FoodEntry | null>(null);
 
   const fetchData = useCallback(async () => {
+    setLoadError(null);
     try {
       const [summaryData, recentData] = await Promise.allSettled([
         api.getDailySummary(),
         api.getRecentFoods(5),
       ]);
+      const userData = await api.getMe().catch(() => null);
+      setUser(userData);
 
       if (summaryData.status === "fulfilled") {
         setSummary(summaryData.value);
+      } else {
+        setSummary(null);
+        setLoadError("Unable to load daily summary.");
       }
+
       if (recentData.status === "fulfilled") {
         setRecentFoods(recentData.value);
+      } else {
+        setRecentFoods([]);
+        setLoadError((prev) => prev ?? "Unable to load recent foods.");
       }
     } catch {
-      // Silently handle errors
+      setSummary(null);
+      setRecentFoods([]);
+      setLoadError("Unable to load dashboard data.");
     } finally {
       setLoading(false);
     }
@@ -41,6 +65,12 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
 
   if (loading) {
     return (
@@ -52,7 +82,45 @@ export default function DashboardPage() {
 
   const today = format(new Date(), "EEEE, MMMM d");
   const consumed = Math.round(summary?.totals?.calories ?? 0);
-  const target = summary?.calorie_target ?? 2000;
+  const profileTarget = user?.profile?.daily_calorie_target;
+  const profileReady = Boolean(
+    user?.profile?.weight_kg &&
+      user?.profile?.height_cm &&
+      user?.profile?.age &&
+      user?.profile?.gender &&
+      user?.profile?.activity_level &&
+      user?.profile?.goal &&
+      user?.profile?.daily_calorie_target
+  );
+  const targetFromSummary = summary?.calorie_target;
+  const target =
+    targetFromSummary === 2000 && profileTarget && profileTarget !== 2000
+      ? profileTarget
+      : (targetFromSummary ?? profileTarget ?? 2000);
+  const confirmDeleteOpen = Boolean(pendingDelete);
+
+  const requestDelete = (food: FoodEntry) => {
+    setPendingDelete(food);
+  };
+
+  const closeDeleteConfirm = (open: boolean) => {
+    if (!open) setPendingDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeletingEntry(pendingDelete.id);
+    try {
+      await api.deleteFoodEntry(pendingDelete.id);
+      await fetchData();
+      toast.success("Entry deleted");
+      setPendingDelete(null);
+    } catch {
+      toast.error("Failed to delete entry");
+    } finally {
+      setDeletingEntry(null);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -61,6 +129,23 @@ export default function DashboardPage() {
         <h1 className="text-xl font-bold tracking-tight text-zinc-900">Today</h1>
         <p className="text-[13px] text-zinc-400">{today}</p>
       </div>
+
+      {!profileReady && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-900">
+            Complete your profile to unlock accurate targets
+          </p>
+          <p className="mt-1 text-xs text-amber-800/80">
+            Calorie target and logging rules depend on your profile.
+          </p>
+          <Link
+            href="/profile"
+            className="mt-2 inline-block text-xs font-semibold text-amber-900 underline underline-offset-2"
+          >
+            Go to Profile
+          </Link>
+        </div>
+      )}
 
       {/* Calorie Ring */}
       <CalorieRing consumed={consumed} target={target} />
@@ -100,6 +185,8 @@ export default function DashboardPage() {
               mealType={mealType}
               foods={foods}
               totalCalories={mealCalories}
+              deletingEntryId={deletingEntry}
+              onDeleteFood={requestDelete}
             />
           );
         })}
@@ -126,6 +213,20 @@ export default function DashboardPage() {
           <Plus className="h-5 w-5" />
         </Button>
       </Link>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={closeDeleteConfirm}
+        title="Delete meal entry?"
+        description={
+          pendingDelete
+            ? `"${pendingDelete.name}" will be removed from your daily log.`
+            : "This entry will be removed from your daily log."
+        }
+        confirmLabel="Delete"
+        loading={Boolean(deletingEntry)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

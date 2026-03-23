@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
@@ -12,11 +13,55 @@ import {
   SelectValue,
 } from "src/components/ui/select";
 import { FoodItem } from "src/components/food/food-item";
-import { api } from "src/lib/api";
-import { generateMockFoodLog, generateMockRecentFoods } from "src/lib/mock";
-import type { FoodLogResponse, MealType, RecentFood } from "src/lib/types";
-import { Send, Loader2, Clock, Utensils, Camera, X, ImageIcon } from "lucide-react";
+import { api, ApiError } from "src/lib/api";
+import type { FoodLogResponse, MealType, RecentFood, UserProfile } from "src/lib/types";
+import {
+  Send,
+  Loader2,
+  Clock,
+  Camera,
+  X,
+  ImageIcon,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
+
+function formatDateTimeLocal(value: Date): string {
+  const pad = (num: number) => String(num).padStart(2, "0");
+  const year = value.getFullYear();
+  const month = pad(value.getMonth() + 1);
+  const day = pad(value.getDate());
+  const hour = pad(value.getHours());
+  const minute = pad(value.getMinutes());
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+function hasCompletedProfile(user: UserProfile): boolean {
+  const profile = user.profile;
+  return Boolean(
+    profile &&
+      profile.weight_kg &&
+      profile.height_cm &&
+      profile.age &&
+      profile.gender &&
+      profile.activity_level &&
+      profile.goal &&
+      profile.daily_calorie_target
+  );
+}
+
+function isWithinLast30Days(input: string): boolean {
+  const selected = new Date(input);
+  if (Number.isNaN(selected.getTime())) return false;
+
+  const now = new Date();
+  const max = now;
+  const min = new Date(now);
+  min.setDate(min.getDate() - 29);
+  min.setHours(0, 0, 0, 0);
+
+  return selected >= min && selected <= max;
+}
 
 function getDefaultMealType(): MealType {
   const hour = new Date().getHours();
@@ -32,10 +77,17 @@ export default function LogPage() {
   const [mealType, setMealType] = useState<MealType>(getDefaultMealType());
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FoodLogResponse | null>(null);
+  const [loadingPhase, setLoadingPhase] = useState<"analyzing" | "retrying" | null>(
+    null
+  );
+  const [loadingText, setLoadingText] = useState("Analyzing...");
   const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [profileReady, setProfileReady] = useState<boolean>(false);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [loggedAt, setLoggedAt] = useState(formatDateTimeLocal(new Date()));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchRecentFoods = useCallback(async () => {
@@ -43,8 +95,7 @@ export default function LogPage() {
       const data = await api.getRecentFoods(10);
       setRecentFoods(data);
     } catch {
-      // Fallback to mock recent foods
-      setRecentFoods(generateMockRecentFoods());
+      setRecentFoods([]);
     } finally {
       setLoadingRecent(false);
     }
@@ -53,6 +104,30 @@ export default function LogPage() {
   useEffect(() => {
     fetchRecentFoods();
   }, [fetchRecentFoods]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUser = async () => {
+      try {
+        const user = await api.getMe();
+        if (mounted) {
+          setProfileReady(hasCompletedProfile(user));
+        }
+      } catch {
+        if (mounted) {
+          setProfileReady(false);
+        }
+      } finally {
+        if (mounted) {
+          setProfileChecked(true);
+        }
+      }
+    };
+    fetchUser();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,6 +140,7 @@ export default function LogPage() {
 
     if (file.size > 10 * 1024 * 1024) {
       toast.error("Image must be under 10MB");
+      e.target.value = "";
       return;
     }
 
@@ -86,31 +162,63 @@ export default function LogPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description.trim() && !photoFile) return;
+    const normalizedDescription = description.trim();
+    if (!normalizedDescription && !photoFile) return;
+    if (!profileReady) {
+      toast.error("Complete your profile before logging food.");
+      return;
+    }
+    if (!isWithinLast30Days(loggedAt)) {
+      toast.error("Log date must be within the last 30 days.");
+      return;
+    }
 
     setLoading(true);
     setResult(null);
+    setLoadingPhase("analyzing");
+    setLoadingText(photoFile ? "Analyzing photo..." : "Analyzing...");
+    const retryTimer = window.setTimeout(() => {
+      setLoadingPhase("retrying");
+      setLoadingText("Still analyzing...");
+    }, 4000);
 
     try {
+      const imageBase64 = photoPreview ? photoPreview.split(",")[1] : undefined;
       const data = await api.logFood({
-        description: description.trim() || "Food from photo",
+        description: normalizedDescription || undefined,
+        image_base64: imageBase64,
         meal_type: mealType,
+        logged_at: loggedAt,
       });
+
       setResult(data);
       setDescription("");
       removePhoto();
       toast.success("Food logged successfully!");
-      fetchRecentFoods();
-    } catch {
-      // Fallback to mock data when backend is unavailable
-      const mockDescription = description.trim() || "Chicken breast with rice and vegetables";
-      const data = generateMockFoodLog(mockDescription, mealType);
-      setResult(data);
-      setDescription("");
-      removePhoto();
-      toast.success("Food logged! (demo mode)");
+      await fetchRecentFoods();
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "rate_limit_exceeded") {
+        toast.error("Daily AI limit reached. Try again tomorrow.");
+      } else if (error instanceof ApiError && error.code === "ai_unavailable") {
+        toast.error("AI service is unavailable. Please try again.");
+      } else if (error instanceof ApiError && error.code === "input_required") {
+        toast.error("Please describe your food or upload a photo.");
+      } else if (error instanceof ApiError && error.code === "image_too_large") {
+        toast.error("Image must be under 10MB.");
+      } else if (error instanceof ApiError && error.code === "profile_required") {
+        toast.error("Complete your profile before logging food.");
+      } else if (error instanceof ApiError && error.code === "logged_at_out_of_range") {
+        toast.error("Log date must be within the last 30 days.");
+      } else if (error instanceof ApiError) {
+        toast.error(error.message || "Failed to log food.");
+      } else {
+        toast.error("Failed to log food.");
+      }
     } finally {
+      clearTimeout(retryTimer);
       setLoading(false);
+      setLoadingPhase(null);
+      setLoadingText("Analyzing...");
     }
   };
 
@@ -118,7 +226,15 @@ export default function LogPage() {
     setDescription(food.name);
   };
 
-  const canSubmit = description.trim() || photoFile;
+  const canSubmit =
+    Boolean(description.trim() || photoFile) && profileChecked && profileReady;
+  const maxLogAt = formatDateTimeLocal(new Date());
+  const minLogAt = (() => {
+    const min = new Date();
+    min.setDate(min.getDate() - 29);
+    min.setHours(0, 0, 0, 0);
+    return formatDateTimeLocal(min);
+  })();
 
   return (
     <div className="space-y-5">
@@ -126,9 +242,26 @@ export default function LogPage() {
       <div>
         <h1 className="text-xl font-bold tracking-tight text-zinc-900">Log Food</h1>
         <p className="text-[13px] text-zinc-400">
-          Describe what you ate or snap a photo
+          Describe what you ate, choose when, or snap a photo
         </p>
       </div>
+
+      {profileChecked && !profileReady && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-900">
+            Complete your profile first
+          </p>
+          <p className="mt-1 text-xs text-amber-800/80">
+            We need your estimated daily calorie target before you can add logs.
+          </p>
+          <Link
+            href="/profile"
+            className="mt-2 inline-block text-xs font-semibold text-amber-900 underline underline-offset-2"
+          >
+            Go to Profile
+          </Link>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -152,6 +285,9 @@ export default function LogPage() {
                 alt="Food photo"
                 className="h-40 w-full object-cover"
               />
+              {loadingPhase === "analyzing" && (
+                <div className="absolute inset-0 animate-pulse bg-black/10" />
+              )}
               <button
                 type="button"
                 onClick={removePhoto}
@@ -209,6 +345,7 @@ export default function LogPage() {
           <Select
             value={mealType}
             onValueChange={(v) => setMealType(v as MealType)}
+            disabled={loading}
           >
             <SelectTrigger
               id="meal-type"
@@ -225,6 +362,22 @@ export default function LogPage() {
           </Select>
         </div>
 
+        <div className="space-y-1.5">
+          <Label htmlFor="logged-at" className="text-xs font-medium text-zinc-500">
+            Log date & time (last 30 days)
+          </Label>
+          <Input
+            id="logged-at"
+            type="datetime-local"
+            value={loggedAt}
+            min={minLogAt}
+            max={maxLogAt}
+            onChange={(e) => setLoggedAt(e.target.value)}
+            className="h-11 rounded-lg border-zinc-200 bg-white text-sm"
+            disabled={loading}
+          />
+        </div>
+
         <Button
           type="submit"
           disabled={loading || !canSubmit}
@@ -233,7 +386,7 @@ export default function LogPage() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Analyzing...
+              {loadingText}
             </>
           ) : (
             <>
@@ -246,32 +399,34 @@ export default function LogPage() {
 
       {/* Result */}
       {result && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-4">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-orange-100">
-                <Utensils className="h-3 w-3 text-orange-600" />
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100">
+                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
               </div>
-              <span className="text-sm font-semibold text-orange-900">Logged!</span>
+              <span className="text-sm font-semibold text-emerald-900">Logged!</span>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                AI
+              </span>
             </div>
-            <span className="text-xs font-bold tabular-nums text-orange-700">
+            <span className="text-xs font-bold tabular-nums text-emerald-700">
               {Math.round(result.totals.calories)} cal
             </span>
           </div>
-          <div className="divide-y divide-orange-100/50">
+          <div className="divide-y divide-emerald-100/70">
             {result.entries.map((entry) => (
               <FoodItem key={entry.id} food={entry} compact />
             ))}
           </div>
-          {/* Macro summary */}
-          <div className="mt-3 flex items-center gap-3 border-t border-orange-100 pt-3">
-            <span className="text-[11px] font-medium text-orange-700/70">
+          <div className="mt-3 flex items-center gap-3 border-t border-emerald-100 pt-3">
+            <span className="text-[11px] font-medium text-emerald-700/80">
               P {Math.round(result.totals.protein_g)}g
             </span>
-            <span className="text-[11px] font-medium text-orange-700/70">
+            <span className="text-[11px] font-medium text-emerald-700/80">
               C {Math.round(result.totals.carbohydrates_total_g)}g
             </span>
-            <span className="text-[11px] font-medium text-orange-700/70">
+            <span className="text-[11px] font-medium text-emerald-700/80">
               F {Math.round(result.totals.fat_total_g)}g
             </span>
           </div>

@@ -17,14 +17,16 @@ import {
   isToday as isDateToday,
   isFuture,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "src/components/ui/button";
 import { Progress } from "src/components/ui/progress";
 import { FoodItem } from "src/components/food/food-item";
+import { ConfirmDialog } from "src/components/common/confirm-dialog";
 import { api } from "src/lib/api";
-import { generateMockDailySummary } from "src/lib/mock";
-import type { DailySummary, MealType } from "src/lib/types";
+import type { DailySummary, MealType, UserProfile } from "src/lib/types";
 import { cn } from "src/lib/utils";
+import { toast } from "sonner";
 
 type ViewMode = "daily" | "weekly" | "monthly";
 
@@ -43,23 +45,41 @@ export default function SummaryPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [dailyCache, setDailyCache] = useState<Record<string, DailySummary>>({});
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<string | null>(null);
+  const [pendingDeleteEntryId, setPendingDeleteEntryId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Fetch a single day's summary
   const fetchDay = useCallback(async (dateStr: string): Promise<DailySummary> => {
-    try {
-      return await api.getDailySummary(dateStr);
-    } catch {
-      return generateMockDailySummary(dateStr);
-    }
+    return api.getDailySummary(dateStr);
   }, []);
 
-  // Fetch and cache a day
+  // Fetch a date range using batch endpoint
+  const fetchRange = useCallback(
+    async (start: string, end: string) => {
+      try {
+        const data = await api.getDateRangeSummaries(start, end);
+        setDailyCache((prev) => ({ ...prev, ...data }));
+      } catch {
+        setLoadError("Unable to load summary range.");
+      }
+    },
+    []
+  );
+
+  // Fetch and cache a single day
   const fetchAndCache = useCallback(
     async (dateStr: string) => {
       if (dailyCache[dateStr]) return dailyCache[dateStr];
-      const data = await fetchDay(dateStr);
-      setDailyCache((prev) => ({ ...prev, [dateStr]: data }));
-      return data;
+      try {
+        const data = await fetchDay(dateStr);
+        setDailyCache((prev) => ({ ...prev, [dateStr]: data }));
+        return data;
+      } catch {
+        setLoadError("Unable to load summary data.");
+        return null;
+      }
     },
     [dailyCache, fetchDay]
   );
@@ -74,24 +94,57 @@ export default function SummaryPage() {
     fetchAndCache(selectedDateStr).finally(() => setLoading(false));
   }, [selectedDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Prefetch visible month for calendar
   useEffect(() => {
-    if (viewMode !== "monthly" && viewMode !== "weekly") return;
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
 
-    const start = viewMode === "weekly"
-      ? startOfWeek(selectedDate, { weekStartsOn: 0 })
-      : startOfMonth(currentMonth);
-    const end = viewMode === "weekly"
-      ? endOfWeek(selectedDate, { weekStartsOn: 0 })
-      : endOfMonth(currentMonth);
+  useEffect(() => {
+    let mounted = true;
+    api
+      .getMe()
+      .then((data) => {
+        if (mounted) setUser(data);
+      })
+      .catch(() => {
+        if (mounted) setUser(null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Batch-fetch visible range for calendar/weekly views
+  useEffect(() => {
+    if (viewMode === "daily") return;
+
+    const today = new Date();
+    let start: Date, end: Date;
+
+    if (viewMode === "weekly") {
+      start = startOfWeek(selectedDate, { weekStartsOn: 0 });
+      end = endOfWeek(selectedDate, { weekStartsOn: 0 });
+    } else {
+      start = startOfMonth(currentMonth);
+      end = endOfMonth(currentMonth);
+    }
+
+    // Don't fetch future dates
+    if (isFuture(start)) return;
+    if (isFuture(end)) end = today;
+
+    const startStr = format(start, "yyyy-MM-dd");
+    const endStr = format(end, "yyyy-MM-dd");
+
+    // Check if we already have all days cached
     const days = eachDayOfInterval({ start, end });
-
-    days.forEach((d) => {
-      const ds = format(d, "yyyy-MM-dd");
-      if (!dailyCache[ds] && !isFuture(d)) {
-        fetchAndCache(ds);
-      }
-    });
+    const allCached = days.every(
+      (d) => isFuture(d) || dailyCache[format(d, "yyyy-MM-dd")]
+    );
+    if (!allCached) {
+      fetchRange(startStr, endStr);
+    }
   }, [viewMode, currentMonth, selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calendar grid for monthly view
@@ -106,12 +159,19 @@ export default function SummaryPage() {
   // Week days for weekly view
   const weekDays = useMemo(() => {
     const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
-    return eachDayOfInterval({ start: weekStart, end: endOfWeek(selectedDate, { weekStartsOn: 0 }) });
+    return eachDayOfInterval({
+      start: weekStart,
+      end: endOfWeek(selectedDate, { weekStartsOn: 0 }),
+    });
   }, [selectedDate]);
 
   // Aggregates for weekly view
   const weeklyStats = useMemo(() => {
-    let totalCal = 0, totalP = 0, totalC = 0, totalF = 0, daysWithData = 0;
+    let totalCal = 0,
+      totalP = 0,
+      totalC = 0,
+      totalF = 0,
+      daysWithData = 0;
     weekDays.forEach((d) => {
       const ds = format(d, "yyyy-MM-dd");
       const s = dailyCache[ds];
@@ -138,7 +198,11 @@ export default function SummaryPage() {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    let totalCal = 0, totalP = 0, totalC = 0, totalF = 0, daysWithData = 0;
+    let totalCal = 0,
+      totalP = 0,
+      totalC = 0,
+      totalF = 0,
+      daysWithData = 0;
     days.forEach((d) => {
       const ds = format(d, "yyyy-MM-dd");
       const s = dailyCache[ds];
@@ -165,6 +229,41 @@ export default function SummaryPage() {
     if (isFuture(day)) return;
     setSelectedDate(day);
     setViewMode("daily");
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    setDeletingEntry(entryId);
+    try {
+      await api.deleteFoodEntry(entryId);
+      // Invalidate cached summary for this date and refetch
+      setDailyCache((prev) => {
+        const updated = { ...prev };
+        delete updated[selectedDateStr];
+        return updated;
+      });
+      // Refetch the day
+      const refreshed = await fetchDay(selectedDateStr);
+      setDailyCache((prev) => ({ ...prev, [selectedDateStr]: refreshed }));
+      toast.success("Entry deleted");
+    } catch {
+      toast.error("Failed to delete entry");
+    } finally {
+      setDeletingEntry(null);
+    }
+  };
+
+  const requestDeleteEntry = (entryId: string) => {
+    setPendingDeleteEntryId(entryId);
+  };
+
+  const closeDeleteConfirm = (open: boolean) => {
+    if (!open) setPendingDeleteEntryId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteEntryId) return;
+    await handleDeleteEntry(pendingDeleteEntryId);
+    setPendingDeleteEntryId(null);
   };
 
   const handlePrevNav = () => {
@@ -208,36 +307,64 @@ export default function SummaryPage() {
   const isNextDisabled = viewMode === "daily" && isDateToday(selectedDate);
   const label = navLabel();
 
+  const profileReady = Boolean(
+    user?.profile?.weight_kg &&
+      user?.profile?.height_cm &&
+      user?.profile?.age &&
+      user?.profile?.gender &&
+      user?.profile?.activity_level &&
+      user?.profile?.goal &&
+      user?.profile?.daily_calorie_target
+  );
+
   const totalCalories = Math.round(summary?.totals?.calories ?? 0);
-  const calorieTarget = summary?.calorie_target ?? 2000;
+  const profileTarget = user?.profile?.daily_calorie_target;
+  const targetFromSummary = summary?.calorie_target;
+  const calorieTarget =
+    targetFromSummary === 2000 && profileTarget && profileTarget !== 2000
+      ? profileTarget
+      : (targetFromSummary ?? profileTarget ?? 2000);
 
   const statusTextColor = (status?: string) => {
     switch (status) {
-      case "within": return "text-orange-600";
-      case "slightly_over": return "text-yellow-600";
-      case "over": return "text-red-600";
-      default: return "text-zinc-600";
+      case "within":
+        return "text-orange-600";
+      case "slightly_over":
+        return "text-yellow-600";
+      case "over":
+        return "text-red-600";
+      default:
+        return "text-zinc-600";
     }
   };
 
   const progressBarColor = (status?: string) => {
     switch (status) {
-      case "within": return "[&>div]:bg-orange-500";
-      case "slightly_over": return "[&>div]:bg-yellow-500";
-      case "over": return "[&>div]:bg-red-500";
-      default: return "[&>div]:bg-orange-500";
+      case "within":
+        return "[&>div]:bg-orange-500";
+      case "slightly_over":
+        return "[&>div]:bg-yellow-500";
+      case "over":
+        return "[&>div]:bg-red-500";
+      default:
+        return "[&>div]:bg-orange-500";
     }
   };
 
   // Get dot color for calendar cell
-  const getDayIndicator = (day: Date): { color: string; calories: number } | null => {
+  const getDayIndicator = (
+    day: Date
+  ): { color: string; calories: number } | null => {
     const ds = format(day, "yyyy-MM-dd");
     const s = dailyCache[ds];
     if (!s || s.entry_count === 0) return null;
     const ratio = s.totals.calories / (s.calorie_target || 2000);
-    if (ratio > 1.15) return { color: "bg-red-400", calories: Math.round(s.totals.calories) };
-    if (ratio > 1.0) return { color: "bg-yellow-400", calories: Math.round(s.totals.calories) };
-    if (ratio > 0.5) return { color: "bg-orange-400", calories: Math.round(s.totals.calories) };
+    if (ratio > 1.15)
+      return { color: "bg-red-400", calories: Math.round(s.totals.calories) };
+    if (ratio > 1.0)
+      return { color: "bg-yellow-400", calories: Math.round(s.totals.calories) };
+    if (ratio > 0.5)
+      return { color: "bg-orange-400", calories: Math.round(s.totals.calories) };
     return { color: "bg-orange-300", calories: Math.round(s.totals.calories) };
   };
 
@@ -245,6 +372,23 @@ export default function SummaryPage() {
     <div className="space-y-4">
       {/* Header */}
       <h1 className="text-xl font-bold tracking-tight text-zinc-900">Summary</h1>
+
+      {!profileReady && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-900">
+            Complete your profile to unlock accurate targets
+          </p>
+          <p className="mt-1 text-xs text-amber-800/80">
+            Summary uses your estimated daily calorie target from profile.
+          </p>
+          <Link
+            href="/profile"
+            className="mt-2 inline-block text-xs font-semibold text-amber-900 underline underline-offset-2"
+          >
+            Go to Profile
+          </Link>
+        </div>
+      )}
 
       {/* View Mode Tabs */}
       <div className="flex rounded-xl border border-zinc-100 bg-white p-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
@@ -295,7 +439,10 @@ export default function SummaryPage() {
           {/* Day headers */}
           <div className="grid grid-cols-7 border-b border-zinc-50 px-2 py-2">
             {DAY_NAMES.map((d) => (
-              <div key={d} className="text-center text-[11px] font-medium text-zinc-400">
+              <div
+                key={d}
+                className="text-center text-[11px] font-medium text-zinc-400"
+              >
                 {d}
               </div>
             ))}
@@ -320,18 +467,28 @@ export default function SummaryPage() {
                     future && "cursor-not-allowed opacity-40",
                     isSelected && "bg-orange-500 text-white",
                     !isSelected && today && "ring-1 ring-orange-300",
-                    !isSelected && !future && isCurrentMonth && "hover:bg-zinc-50"
+                    !isSelected &&
+                      !future &&
+                      isCurrentMonth &&
+                      "hover:bg-zinc-50"
                   )}
                 >
-                  <span className={cn(
-                    "font-medium tabular-nums",
-                    isSelected && "font-bold"
-                  )}>
+                  <span
+                    className={cn(
+                      "font-medium tabular-nums",
+                      isSelected && "font-bold"
+                    )}
+                  >
                     {format(day, "d")}
                   </span>
                   {/* Calorie indicator dot */}
                   {indicator && !isSelected && (
-                    <div className={cn("mt-0.5 h-1 w-1 rounded-full", indicator.color)} />
+                    <div
+                      className={cn(
+                        "mt-0.5 h-1 w-1 rounded-full",
+                        indicator.color
+                      )}
+                    />
                   )}
                   {indicator && isSelected && (
                     <div className="mt-0.5 h-1 w-1 rounded-full bg-white/80" />
@@ -346,7 +503,10 @@ export default function SummaryPage() {
       {/* Weekly Bar Chart */}
       {viewMode === "weekly" && (
         <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <div className="flex items-end justify-between gap-1" style={{ height: 120 }}>
+          <div
+            className="flex items-end justify-between gap-1"
+            style={{ height: 120 }}
+          >
             {weekDays.map((day) => {
               const ds = format(day, "yyyy-MM-dd");
               const s = dailyCache[ds];
@@ -374,20 +534,28 @@ export default function SummaryPage() {
                   <span className="text-[10px] font-medium tabular-nums text-zinc-400">
                     {cal > 0 ? Math.round(cal) : ""}
                   </span>
-                  <div className="relative w-full flex items-end justify-center" style={{ height: 80 }}>
+                  <div
+                    className="relative flex w-full items-end justify-center"
+                    style={{ height: 80 }}
+                  >
                     <div
                       className={cn(
                         "w-full max-w-[28px] rounded-t-md transition-all duration-300",
                         cal > 0 ? barColor : "bg-zinc-100",
                         isSelected && "ring-2 ring-orange-500 ring-offset-1"
                       )}
-                      style={{ height: cal > 0 ? `${Math.max(pct * 0.8, 4)}%` : "4px" }}
+                      style={{
+                        height:
+                          cal > 0 ? `${Math.max(pct * 0.8, 4)}%` : "4px",
+                      }}
                     />
                   </div>
-                  <span className={cn(
-                    "text-[11px] font-medium",
-                    today ? "text-orange-600" : "text-zinc-500"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[11px] font-medium",
+                      today ? "text-orange-600" : "text-zinc-500"
+                    )}
+                  >
                     {format(day, "EEE")}
                   </span>
                 </button>
@@ -407,7 +575,8 @@ export default function SummaryPage() {
           </div>
           <div className="p-4">
             {(() => {
-              const stats = viewMode === "weekly" ? weeklyStats : monthlyStats;
+              const stats =
+                viewMode === "weekly" ? weeklyStats : monthlyStats;
               return (
                 <div className="space-y-3">
                   {/* Calorie summary */}
@@ -436,9 +605,24 @@ export default function SummaryPage() {
                   </div>
                   {/* Macro totals */}
                   <div className="grid grid-cols-3 gap-2">
-                    <MacroStat label="Protein" value={stats.totalP} unit="g" color="text-blue-600" />
-                    <MacroStat label="Carbs" value={stats.totalC} unit="g" color="text-amber-600" />
-                    <MacroStat label="Fat" value={stats.totalF} unit="g" color="text-rose-500" />
+                    <MacroStat
+                      label="Protein"
+                      value={stats.totalP}
+                      unit="g"
+                      color="text-blue-600"
+                    />
+                    <MacroStat
+                      label="Carbs"
+                      value={stats.totalC}
+                      unit="g"
+                      color="text-amber-600"
+                    />
+                    <MacroStat
+                      label="Fat"
+                      value={stats.totalF}
+                      unit="g"
+                      color="text-rose-500"
+                    />
                   </div>
                 </div>
               );
@@ -459,7 +643,9 @@ export default function SummaryPage() {
               {/* Calorie Bar */}
               <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-500">Calories</span>
+                  <span className="text-xs font-medium text-zinc-500">
+                    Calories
+                  </span>
                   <span
                     className={cn(
                       "text-xs font-semibold tabular-nums",
@@ -470,7 +656,10 @@ export default function SummaryPage() {
                   </span>
                 </div>
                 <Progress
-                  value={Math.min((totalCalories / calorieTarget) * 100, 100)}
+                  value={Math.min(
+                    (totalCalories / calorieTarget) * 100,
+                    100
+                  )}
                   className={cn(
                     "h-2.5 rounded-full bg-zinc-100",
                     progressBarColor(summary.status)
@@ -527,7 +716,27 @@ export default function SummaryPage() {
                       <div className="border-t border-zinc-50 px-4 py-2">
                         <div className="divide-y divide-zinc-50">
                           {foods.map((food) => (
-                            <FoodItem key={food.id} food={food} compact />
+                            <div
+                              key={food.id}
+                              className="group flex items-center gap-1"
+                            >
+                              <div className="flex-1">
+                                <FoodItem food={food} compact />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => requestDeleteEntry(food.id)}
+                                disabled={deletingEntry === food.id}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50"
+                                title="Delete entry"
+                              >
+                                {deletingEntry === food.id ? (
+                                  <div className="h-3 w-3 animate-spin rounded-full border-[2px] border-red-400 border-t-transparent" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -546,6 +755,16 @@ export default function SummaryPage() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteEntryId)}
+        onOpenChange={closeDeleteConfirm}
+        title="Delete meal entry?"
+        description="This action will remove the selected food log entry."
+        confirmLabel="Delete"
+        loading={Boolean(deletingEntry)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
@@ -570,7 +789,10 @@ function MacroBar({
       </p>
       <div className={cn("mt-2 h-1 w-full rounded-full", trackColor)}>
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            color
+          )}
           style={{ width: `${Math.min((value / 150) * 100, 100)}%` }}
         />
       </div>
@@ -594,7 +816,9 @@ function MacroStat({
       <p className="text-[11px] font-medium text-zinc-400">{label}</p>
       <p className={cn("text-sm font-bold tabular-nums", color)}>
         {value.toLocaleString()}
-        <span className="ml-0.5 text-[10px] font-normal text-zinc-400">{unit}</span>
+        <span className="ml-0.5 text-[10px] font-normal text-zinc-400">
+          {unit}
+        </span>
       </p>
     </div>
   );

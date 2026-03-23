@@ -10,6 +10,11 @@ interface FoodItemProps {
 }
 
 export function FoodItem({ food, compact = false, onClick }: FoodItemProps) {
+  const quantityText =
+    "quantity_text" in food && food.quantity_text
+      ? food.quantity_text
+      : `${Math.round(food.serving_size_g)} g`;
+
   return (
     <div
       className={cn(
@@ -40,6 +45,7 @@ export function FoodItem({ food, compact = false, onClick }: FoodItemProps) {
         >
           {food.name}
         </p>
+        <p className="mt-0.5 text-[11px] text-zinc-500">{quantityText}</p>
         <div className="mt-0.5 flex items-center gap-2 text-[11px] tabular-nums text-zinc-400">
           <span>
             P <span className="text-zinc-500">{food.protein_g}g</span>
