@@ -1,0 +1,26 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# next
+.next
+out
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# python
+services/api/.venv
+services/api/__pycache__
+*.pyc
+
+# IDE / OS
+.DS_Store
+*.log

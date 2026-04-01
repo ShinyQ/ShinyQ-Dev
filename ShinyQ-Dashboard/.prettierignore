@@ -1,0 +1,6 @@
+.next
+node_modules
+bun.lock
+services/api/.venv
+services/api/.ruff_cache
+services/api/uv.lock
