@@ -1,6 +1,5 @@
-'use client';
-
 import { timelineItems } from '@/data/timeline';
+import { enhanceTimeline } from '@/lib/timeline';
 import Timeline from '@/components/journey/Timeline';
 
 const FILTERS = [
@@ -11,11 +10,13 @@ const FILTERS = [
     { label: "Competitions", value: "Competition" }
 ];
 
-export default function JourneyPage() {
+export default async function JourneyPage() {
+    const enhanced = await enhanceTimeline(timelineItems);
+
     return (
         <div className="container mx-auto py-16 md:py-20">
             <Timeline
-                items={timelineItems}
+                items={enhanced}
                 filters={FILTERS}
             />
         </div>

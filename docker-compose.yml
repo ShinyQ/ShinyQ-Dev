@@ -112,6 +112,43 @@ services:
     depends_on:
       - caloriq-backend
 
+  # ShinyQ Dashboard Backend API
+  shinyq-dashboard-api:
+    build:
+      context: ./ShinyQ-Dashboard/services/api
+      dockerfile: Dockerfile
+    container_name: shinyq-dashboard-api
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./ShinyQ-Dashboard/services/api/.env
+    restart: unless-stopped
+    networks:
+      - minerva-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ShinyQ Dashboard Frontend
+  shinyq-dashboard:
+    build:
+      context: ./ShinyQ-Dashboard
+      dockerfile: Dockerfile
+    container_name: shinyq-dashboard
+    ports:
+      - "3002:3000"
+    env_file:
+      - ./ShinyQ-Dashboard/.env.local
+    environment:
+      - INTERNAL_API_URL=http://shinyq-dashboard-api:8000
+    restart: unless-stopped
+    networks:
+      - minerva-network
+    depends_on:
+      - shinyq-dashboard-api
+
 networks:
   minerva-network:
     driver: bridge

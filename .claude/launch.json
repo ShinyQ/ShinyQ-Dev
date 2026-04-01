@@ -14,5 +14,13 @@
       "port": 4000,
       "autoPort": false
     }
+  ,
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "/Users/shinyq/.bun/bin/bun",
+      "runtimeArgs": ["run", "--cwd", "ShinyQ-Dashboard", "dev"],
+      "port": 3001,
+      "autoPort": true
+    }
   ]
 }

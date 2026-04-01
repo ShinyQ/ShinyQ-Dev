@@ -52,7 +52,7 @@ export const timelineItems: TimelineItem[] = [
       "AWS",
       "Jenkins",
     ],
-    logo: "/company/jenius.png",
+    logo: "company/jenius.png",
     type: "Full-Time",
   },
   {
@@ -77,7 +77,7 @@ export const timelineItems: TimelineItem[] = [
       "TailwindCSS",
       "SonarQube",
     ],
-    logo: "/company/jatis.png",
+    logo: "company/jatis.png",
     type: "Full-Time",
   },
   {
@@ -94,7 +94,7 @@ export const timelineItems: TimelineItem[] = [
       "Optimized MySQL with Gin and Laravel, speeding queries by 20% and cutting errors by 40%",
       "Migrated homepage backend to GraphQL, boosting load speed by 25%",
     ],
-    logo: "/company/mnc.png",
+    logo: "company/mnc.png",
     tools: ["AWS Lambda", "GraphQL", "Gin", "Laravel", "MySQL", "Redis"],
     type: "Full-Time",
   },
@@ -121,7 +121,7 @@ export const timelineItems: TimelineItem[] = [
       "RabbitMQ",
       "Flask",
     ],
-    logo: "/company/jublia.png",
+    logo: "company/jublia.png",
     type: "Part-Time",
   },
   {
@@ -144,7 +144,7 @@ export const timelineItems: TimelineItem[] = [
       "DigitalOcean",
       "Sentry",
     ],
-    logo: "/company/shumi.png",
+    logo: "company/shumi.png",
     type: "Part-Time",
   },
   {
@@ -160,7 +160,7 @@ export const timelineItems: TimelineItem[] = [
       "Deployed on AWS EC2 and implemented job scheduler for 24/7 monitoring, improving coverage by 20%",
     ],
     tools: ["Node.js", "Express.js", "Sequelize", "MySQL", "Nessus", "AWS EC2"],
-    logo: "/company/bssn.png",
+    logo: "company/bssn.png",
     type: "Part-Time",
   },
   {
@@ -175,7 +175,7 @@ export const timelineItems: TimelineItem[] = [
       "Built RAG-LLM system to analyze Jenius app reviews using ISO/IEC 25010:2011 framework. Stored data in PostgreSQL/ChromaDB, classified feedback into quality dimensions, and generated improvement recommendations.",
     ],
     tools: ["Python", "LangChain", "Llama 3.2", "PostgreSQL", "ChromaDB"],
-    logo: "/company/its.png",
+    logo: "company/its.png",
     type: "Education",
   },
   {
@@ -190,7 +190,7 @@ export const timelineItems: TimelineItem[] = [
       "Created Django dashboard analyzing university feedback via Twitter API. Implemented IndoBERT model for Bahasa Indonesia sentiment analysis. Used incremental development and iterative testing to improve accuracy",
     ],
     tools: ["Python", "Django", "IndoBERT", "Twitter API"],
-    logo: "/company/telyu.png",
+    logo: "company/telyu.png",
     type: "Education",
   },
   {

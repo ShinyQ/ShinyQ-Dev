@@ -1,12 +1,21 @@
 import Image from 'next/image';
 import { techItems } from '@/data/techStack';
+import { getSignedFileUrl } from '@/lib/r2';
 
-export default function TechStack() {
-    const backend = techItems.filter((item) => item.type === 'backend');
-    const frontend = techItems.filter((item) => item.type === 'frontend');
-    const other = techItems.filter((item) => item.type === 'other');
+export default async function TechStack() {
+    // Pre-sign all icon URLs in parallel before rendering
+    const signed = await Promise.all(
+        techItems.map(async (item) => ({
+            ...item,
+            icon: await getSignedFileUrl(item.icon),
+        }))
+    );
 
-    const TechRow = ({ items, animationClass }: { items: typeof backend; animationClass: string }) => (
+    const backend = signed.filter((item) => item.type === 'backend');
+    const frontend = signed.filter((item) => item.type === 'frontend');
+    const other = signed.filter((item) => item.type === 'other');
+
+    const TechRow = ({ items, animationClass }: { items: typeof signed; animationClass: string }) => (
         <div className="tech-slider relative overflow-hidden border border-border rounded-lg bg-gradient-to-r py-0">
             <div className="w-full relative overflow-hidden">
                 <div className={`${animationClass} flex gap-3 w-max px-2`}>
